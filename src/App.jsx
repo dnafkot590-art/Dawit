@@ -141,7 +141,9 @@ function loadBool(key) { return localStorage.getItem(key) === "true"; }
 function loadStr(key, def = "") { return localStorage.getItem(key) || def; }
 
 export default function App() {
-  // አውቶማቲክ ፑሽ (Auto-save) ኮድ
+
+
+  // አውቶማቲክ ፑሽ (Auto-save) ኮድ - ትክክለኛው ቦታው እዚህ ከስቴቶች በታች ነው
   useEffect(() => {
     if (!db) return;
 
