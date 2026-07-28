@@ -149,6 +149,7 @@ export default function App() {
   const [dark, setDark] = useState(() => loadBool(DARK_KEY));
   const [lang, setLang] = useState(() => loadStr(LANG_KEY, "en"));
   const [showNewAcc, setShowNewAcc] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Employee portal state
   const [empLoggedIn, setEmpLoggedIn] = useState(null); // employee object or null
@@ -2208,12 +2209,32 @@ export default function App() {
                   : "ስልክ ቁጥር እና ፓስዋርድ ያስገቡ።"}
               </p>
               {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
-              <form className="auth-form" onSubmit={handleEmpLogin}>
-                <label>ስልክ ቁጥር<input type="tel" placeholder="0912345678" value={empLoginForm.phone} onChange={e => setEmpLoginForm(p => ({ ...p, phone: e.target.value }))} /></label>
+              <form className="auth-form" onSubmit={handleEmpLogin} autoComplete="on">
+                <label>ስልክ ቁጥር<input
+                  type="tel"
+                  placeholder="0912345678"
+                  value={empLoginForm.phone}
+                  onChange={e => setEmpLoginForm(p => ({ ...p, phone: e.target.value }))}
+                  autoComplete="username"
+                  inputMode="tel"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  style={{ fontSize: 16 }}
+                /></label>
                 {!isPasswordFree && (
-                  <label>ፓስዋርድ<input type="password" placeholder="1234" value={empLoginForm.password} onChange={e => setEmpLoginForm(p => ({ ...p, password: e.target.value }))} /></label>
+                  <label>ፓስዋርድ<input
+                    type="password"
+                    placeholder="1234"
+                    value={empLoginForm.password}
+                    onChange={e => setEmpLoginForm(p => ({ ...p, password: e.target.value }))}
+                    autoComplete="current-password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    style={{ fontSize: 16 }}
+                  /></label>
                 )}
-                <button className="btn" type="submit">ግባ</button>
+                <button className="btn" type="submit" style={{ touchAction: "manipulation" }}>ግባ</button>
               </form>
               <button className="secondary-btn" style={{ marginTop: 8 }} onClick={() => setShowEmpPortal(false)}>← Admin Login</button>
             </div>
@@ -2233,10 +2254,30 @@ export default function App() {
             </div>
             <p style={{ color: "#64748b", margin: "0 0 16px" }}>{t.signIn}</p>
             {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
-            <form className="auth-form" onSubmit={handleLogin}>
-              <label>Phone Number<input type="tel" placeholder="0912345678" value={loginForm.phoneNumber} onChange={e => setLoginForm(p => ({ ...p, phoneNumber: e.target.value }))} /></label>
-              <label>{t.password}<input type="password" inputMode="numeric" maxLength={4} placeholder="1234" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} /></label>
-              <button className="btn" type="submit">{t.login}</button>
+            <form className="auth-form" onSubmit={handleLogin} autoComplete="on">
+              <label>Phone Number<input
+                type="tel"
+                placeholder="0912345678"
+                value={loginForm.phoneNumber}
+                onChange={e => setLoginForm(p => ({ ...p, phoneNumber: e.target.value }))}
+                autoComplete="username"
+                inputMode="tel"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck="false"
+                style={{ fontSize: 16 }}
+              /></label>
+              <label>{t.password}<input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="1234"
+                value={loginForm.password}
+                onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
+                autoComplete="current-password"
+                style={{ fontSize: 16 }}
+              /></label>
+              <button className="btn" type="submit" style={{ touchAction: "manipulation" }}>{t.login}</button>
             </form>
             <button className="secondary-btn" style={{ marginTop: 6 }} onClick={() => setShowNewAcc(p => !p)}>{showNewAcc ? t.hideAccount : t.createAccount}</button>
             {showNewAcc && (

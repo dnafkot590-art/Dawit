@@ -21672,6 +21672,7 @@ function loadStr(key, def = "") {
 function App() {
   var _a, _b, _c, _d, _e;
   const [db2, setDb] = reactExports.useState(loadDb);
+  localStorage.removeItem("dr_hibist_db");
   const [toast, setToast] = reactExports.useState(null);
   const [section, setSection] = reactExports.useState("Dashboard");
   const [isAdmin, setIsAdmin] = reactExports.useState(() => loadBool(AUTH_KEY));

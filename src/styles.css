@@ -36,6 +36,47 @@ body {
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
+/* Mobile auth card fixes */
+@media (max-width: 480px) {
+  .auth-screen {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+
+  .auth-card {
+    padding: 22px 18px;
+    border-radius: 14px;
+    width: 100%;
+  }
+
+  .auth-form input,
+  .auth-form select {
+    font-size: 16px !important;
+    padding: 14px 12px !important;
+    min-height: 48px;
+  }
+
+  .auth-card .btn,
+  .auth-card .secondary-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    min-height: 48px;
+    margin-top: 8px;
+    touch-action: manipulation;
+  }
+
+  .auth-card h1 {
+    font-size: 20px;
+  }
+
+  .auth-brand-top img {
+    width: 52px;
+    height: 52px;
+  }
+}
+
 .auth-brand-top {
   display: flex;
   align-items: center;
@@ -88,10 +129,17 @@ body {
 .auth-form input,
 .auth-form select {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font: inherit;
+  font-size: 16px;
+  /* iOS zoom ለማስቀረት 16px ያስፈልጋል */
+  -webkit-appearance: none;
+  appearance: none;
+  background: white;
+  color: #0f172a;
+  touch-action: manipulation;
 }
 
 .finance-dashboard {
@@ -571,6 +619,246 @@ td {
   .panel-grid,
   .report-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* ===== SIDEBAR ===== */
+  .finance-dashboard {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .sidebar {
+    padding: 14px 16px;
+    gap: 10px;
+    position: relative;
+  }
+
+  .sidebar .menu {
+    display: none;
+  }
+
+  .sidebar .menu.mobile-open {
+    display: grid;
+  }
+
+  .sidebar .sidebar-upload {
+    display: none;
+  }
+
+  .sidebar-mobile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .topbar h1 {
+    font-size: 18px;
+    width: 100%;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .theme-toggle,
+  .language-toggle {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* ===== CONTENT ===== */
+  .content {
+    padding: 14px;
+  }
+
+  /* ===== GRIDS ===== */
+  .summary-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+
+  .panel-grid,
+  .report-grid,
+  .settings-section {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .bs-form-grid,
+  .bs-cols {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  /* ===== EMP INFO GRID ===== */
+  .emp-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+
+  .emp-info-val {
+    font-size: 15px;
+  }
+
+  /* ===== EMP PORTAL ===== */
+  .emp-portal-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .emp-portal-screen {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .emp-portal-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* ===== TABS ===== */
+  .hrm-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hrm-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  /* ===== FORM GRID ===== */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ===== TABLES ===== */
+  .report-table,
+  .is-table,
+  .bs-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* ===== METRIC CARDS ===== */
+  .metric {
+    font-size: 18px;
+  }
+
+  .card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .card h3 {
+    font-size: 14px;
+  }
+
+  /* ===== BANK SUMMARY ===== */
+  .bank-summary-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+
+  /* ===== MESSAGES ===== */
+  .chat-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ===== DOCTOR WEEKLY ===== */
+  .doctor-weekly-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .doctor-weekly-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ===== DEPT BAR ===== */
+  .dept-bar-label {
+    width: 80px;
+    font-size: 11px;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn,
+  .secondary-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /* ===== INCOME STATEMENT ===== */
+  .income-statement-wrap {
+    padding: 14px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .emp-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bank-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .doctor-weekly-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dw-field-full {
+    grid-column: 1 !important;
+  }
+
+  .topbar h1 {
+    font-size: 15px;
+  }
+
+  .hrm-tab {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .emp-portal-card {
+    padding: 12px;
+  }
+
+  .brand {
+    font-size: 15px;
   }
 }
 
@@ -1665,5 +1953,35 @@ td {
 
   .dw-field-full {
     grid-column: 1;
+  }
+}
+
+/* ===== HAMBURGER BUTTON (desktop ላይ ተደብቋል) ===== */
+.hamburger-btn {
+  display: none;
+  background: #1e293b;
+  border: none;
+  color: white;
+  font-size: 22px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.sidebar-mobile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Desktop ላይ sidebar-mobile-top ትርፍ space አይሆን */
+@media (min-width: 769px) {
+  .hamburger-btn {
+    display: none !important;
+  }
+
+  .sidebar-mobile-top {
+    display: block;
   }
 }
