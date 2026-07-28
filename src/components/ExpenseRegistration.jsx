@@ -30,6 +30,7 @@ export default function ExpenseRegistration({ form, banks, onChange, onSubmit })
           <option value="Telecom">Telecom</option>
           <option value="Pharmacy">Pharmacy</option>
           <option value="Lab">Lab</option>
+          <option value="Medicine">Medicine</option>
           <option value="Misc Expenses">Misc Expenses</option>
         </select>
         <input

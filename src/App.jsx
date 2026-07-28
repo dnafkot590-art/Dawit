@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import XLSXStyle from "xlsx-js-style";
 import IncomeRegistration from "./components/IncomeRegistration.jsx";
 import ExpenseRegistration from "./components/ExpenseRegistration.jsx";
@@ -141,48 +141,29 @@ function loadBool(key) { return localStorage.getItem(key) === "true"; }
 function loadStr(key, def = "") { return localStorage.getItem(key) || def; }
 
 export default function App() {
-  const [db, setDb] = useState(loadDb);
-  localStorage.removeItem("dr_hibist_db"); // ወይም localStorage.clear();
-  const [toast, setToast] = useState(null);
-  const [section, setSection] = useState("Dashboard");
-  const [isAdmin, setIsAdmin] = useState(() => loadBool(AUTH_KEY));
-  const [dark, setDark] = useState(() => loadBool(DARK_KEY));
-  const [lang, setLang] = useState(() => loadStr(LANG_KEY, "en"));
-  const [showNewAcc, setShowNewAcc] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // አውቶማቲክ ፑሽ (Auto-save) ኮድ
+  useEffect(() => {
+    if (!db) return;
 
-  // Employee portal state
-  const [empLoggedIn, setEmpLoggedIn] = useState(null); // employee object or null
-  const [showEmpPortal, setShowEmpPortal] = useState(false);
-  const [empLoginForm, setEmpLoginForm] = useState({ phone: "", password: "" });
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('clinic_data')
+          .upsert({ id: 'app_state', data: db });
 
-  // Forms
-  const [loginForm, setLoginForm] = useState({ phoneNumber: "", password: "" });
-  const [newAccForm, setNewAccForm] = useState({ fullName: "", creditAccount: "", phoneNumber: "", email: "", password: "" });
-  const [incomeForm, setIncomeForm] = useState({ category: "Clinic income", bankId: "", amount: "", notes: "", date: today() });
-  const [expenseForm, setExpenseForm] = useState({ category: "Electricity", bankId: "", amount: "", notes: "", date: today() });
-  const [bankForm, setBankForm] = useState({ name: "", accountNumber: "", initialBalance: "" });
-  const [debtForm, setDebtForm] = useState({ organization: "", total: "", paid: "", status: "Pending", date: today() });
-  const [empForm, setEmpForm] = useState({ name: "", department: "Doctor", phone: "", bankAccount: "", hireDate: today(), basicSalary: "" });
-  const [payrollEdit, setPayrollEdit] = useState({}); // {empId: {duty, pension, basicSalary}}
-  const [createUserForm, setCreateUserForm] = useState({ empId: "", phone: "", password: "", department: "" });
-  const [leaveDaysForm, setLeaveDaysForm] = useState({ empId: "", days: "25" });
-  const [payrollBankId, setPayrollBankId] = useState("");
-  const [payrollDate, setPayrollDate] = useState(today());
-  const [msgForm, setMsgForm] = useState({ toId: "", body: "" });
-  const [empMsgBody, setEmpMsgBody] = useState("");
-  const [leaveForm, setLeaveForm] = useState({ empId: "", days: "", startDate: today(), reason: "", leaveType: "annual" });
-  const [hrmTab, setHrmTab] = useState("employees");
-  const [reportTab, setReportTab] = useState("monthly");
-  const [financeTab, setFinanceTab] = useState("income");
-  // Balance Sheet form
-  const [bsForm, setBsForm] = useState(() => ({
-    asOfDate: new Date().toISOString().slice(0, 10),
-    cashAndBank: "", accountsReceivable: "", inventory: "",
-    equipmentAndVehicles: "", accumulatedDepreciation: "",
-    accountsPayable: "", taxPayable: "",
-    capital: "", retainedEarnings: "",
-  }));
+        if (error) {
+          console.error('Error auto-syncing to Supabase:', error);
+        } else {
+          console.log('Changes synced to Supabase automatically.');
+        }
+      } catch (err) {
+        console.error('Auto-sync failed:', err);
+      }
+    }, 1500);
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [db]);
+
   const [bsEditing, setBsEditing] = useState(false);
   // Leave approval with adjustment
   const [leaveApproveEdit, setLeaveApproveEdit] = useState({}); // {reqId: adjustedDays}
@@ -210,6 +191,9 @@ export default function App() {
   const [editDebtForm, setEditDebtForm] = useState({});
   // Custom department
   const [customDept, setCustomDept] = useState("");
+  // Report date range filter
+  const [reportDateFrom, setReportDateFrom] = useState("");
+  const [reportDateTo, setReportDateTo] = useState("");
 
   // Doctor weekly revenue calculator
   const [doctorWeeklyForm, setDoctorWeeklyForm] = useState({});
@@ -217,8 +201,6 @@ export default function App() {
   const [doctorWeeklyHistory, setDoctorWeeklyHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem("dr-hibist-weekly-v1") || "{}"); } catch { return {}; }
   });
-
-  function today() { return new Date().toISOString().slice(0, 10); }
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }, [db]);
   useEffect(() => { localStorage.setItem(AUTH_KEY, String(isAdmin)); }, [isAdmin]);
@@ -1182,74 +1164,85 @@ export default function App() {
     if (!exp) return;
     const bank = (db.bankAccounts || []).find(b => b.id === Number(exp.bankId));
     const logo = db.organizationLogo || localStorage.getItem(LOGO_KEY) || "";
+    const orgName = db.organizationLogoText || db.organizationName || "Dr Hibist Pediatrics and Medical Center";
+
     const logoHtml = logo
-      ? `<img src="${logo}" alt="logo" style="height:60px;width:auto;object-fit:contain;" />`
-      : `<div style="font-size:22px;font-weight:800;color:#1e3a5f;">Dr Hibist</div>`;
+      ? `<img src="${logo}" alt="logo" style="height:72px;width:auto;object-fit:contain;border-radius:10px;" />`
+      : `<div style="font-size:26px;font-weight:900;color:#1e3a5f;letter-spacing:-0.5px;">Dr Hibist</div>`;
+
+    // Watermark — ሙሉ ሽፋን
     const watermarkHtml = logo
-      ? `<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);opacity:0.07;z-index:0;pointer-events:none;">
-           <img src="${logo}" alt="" style="width:340px;height:auto;" />
+      ? `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden;">
+           <img src="${logo}" alt="" style="width:80%;max-width:480px;height:auto;opacity:0.06;transform:rotate(-20deg);" />
          </div>`
-      : `<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);opacity:0.07;z-index:0;pointer-events:none;font-size:90px;font-weight:900;color:#1e3a5f;white-space:nowrap;">Dr Hibist</div>`;
+      : `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden;">
+           <span style="font-size:110px;font-weight:900;color:#1e3a5f;opacity:0.05;transform:rotate(-20deg);white-space:nowrap;">Dr Hibist</span>
+         </div>`;
+
     const receiptHtml = `
       <html><head><title>Expense Receipt</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:Arial,sans-serif;padding:36px;max-width:520px;margin:0 auto;position:relative;}
-        .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:2.5px solid #1e3a5f;}
-        .header-left{display:flex;align-items:center;gap:12px;}
-        .org-name{font-size:15px;font-weight:700;color:#1e3a5f;line-height:1.3;}
-        .org-sub{font-size:11px;color:#64748b;}
-        .receipt-title{font-size:13px;font-weight:700;color:#64748b;text-align:right;}
-        .receipt-no{font-size:20px;font-weight:800;color:#1e3a5f;text-align:right;}
-        .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;position:relative;z-index:1;}
+        body{font-family:'Segoe UI',Arial,sans-serif;padding:40px;max-width:560px;margin:0 auto;position:relative;background:#fff;}
+        .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;padding-bottom:16px;border-bottom:3px solid #1e3a5f;}
+        .header-left{display:flex;align-items:center;gap:14px;}
+        .org-name{font-size:16px;font-weight:800;color:#1e3a5f;line-height:1.3;}
+        .org-sub{font-size:11px;color:#64748b;margin-top:2px;}
+        .receipt-badge{background:#1e3a5f;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.06em;text-transform:uppercase;}
+        .receipt-no{font-size:26px;font-weight:900;color:#1e3a5f;text-align:right;margin-top:4px;}
+        .section{position:relative;z-index:1;}
+        .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed #e2e8f0;}
+        .row:last-child{border-bottom:none;}
         .label{color:#64748b;font-size:13px;}
-        .val{font-weight:700;font-size:13px;text-align:right;}
-        .total-row{display:flex;justify-content:space-between;padding:12px 16px;margin-top:14px;background:#1e3a5f;border-radius:8px;position:relative;z-index:1;}
-        .total-label{color:#fff;font-size:14px;}
-        .total-val{color:#fff;font-size:20px;font-weight:800;}
-        .status-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
-        .approved{background:#dcfce7;color:#16a34a;}
-        .pending{background:#fef9c3;color:#ca8a04;}
-        .rejected{background:#fee2e2;color:#dc2626;}
-        .footer{text-align:center;margin-top:22px;font-size:10px;color:#94a3b8;position:relative;z-index:1;border-top:1px solid #e2e8f0;padding-top:12px;}
-        @media print{body{padding:20px;}}
+        .val{font-weight:700;font-size:13px;text-align:right;color:#1e293b;}
+        .total-box{margin-top:20px;background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:14px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1;}
+        .total-label{color:rgba(255,255,255,0.85);font-size:14px;font-weight:600;}
+        .total-val{color:#fff;font-size:28px;font-weight:900;letter-spacing:-0.5px;}
+        .birr{font-size:14px;font-weight:600;opacity:0.85;margin-left:4px;}
+        .status-pill{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.03em;}
+        .approved{background:#dcfce7;color:#15803d;}
+        .pending{background:#fef9c3;color:#a16207;}
+        .rejected{background:#fee2e2;color:#b91c1c;}
+        .footer{text-align:center;margin-top:24px;font-size:10px;color:#94a3b8;position:relative;z-index:1;border-top:1px solid #f1f5f9;padding-top:14px;line-height:1.7;}
+        @media print{body{padding:24px;} @page{margin:10mm;}}
       </style></head><body>
       ${watermarkHtml}
       <div class="header">
         <div class="header-left">
           ${logoHtml}
           <div>
-            <div class="org-name">Dr Hibist Pediatrics</div>
-            <div class="org-sub">and Medical Center</div>
+            <div class="org-name">${orgName}</div>
+            <div class="org-sub">Official Expense Receipt</div>
           </div>
         </div>
-        <div>
-          <div class="receipt-title">EXPENSE RECEIPT</div>
+        <div style="text-align:right;">
+          <div class="receipt-badge">RECEIPT</div>
           <div class="receipt-no">#${exp.id.toString().slice(-6)}</div>
         </div>
       </div>
-      <div style="position:relative;z-index:1;">
+      <div class="section">
         <div class="row"><span class="label">ቀን / Date</span><span class="val">${exp.date}</span></div>
         <div class="row"><span class="label">Category</span><span class="val">${exp.category}</span></div>
         <div class="row"><span class="label">Bank Account</span><span class="val">${bank?.name || "—"} (${bank?.accountNumber || "—"})</span></div>
         <div class="row"><span class="label">Note / ማስታወሻ</span><span class="val">${exp.note || "—"}</span></div>
-        <div class="row"><span class="label">Status</span>
+        <div class="row">
+          <span class="label">Status</span>
           <span class="val">
             <span class="status-pill ${exp.status === "Approved" ? "approved" : exp.status === "Rejected" ? "rejected" : "pending"}">${exp.status || "Approved"}</span>
           </span>
         </div>
-        <div class="total-row">
-          <span class="total-label">Total Amount</span>
-          <span class="total-val">${Number(exp.amount).toLocaleString()} Birr</span>
-        </div>
+      </div>
+      <div class="total-box">
+        <span class="total-label">Total Amount</span>
+        <span class="total-val">${Number(exp.amount).toLocaleString()}<span class="birr">Birr</span></span>
       </div>
       <div class="footer">
         Generated: ${new Date().toLocaleString()}<br/>
-        Dr Hibist Pediatrics and Medical Center — Official Expense Receipt
+        ${orgName} — Official Expense Receipt
       </div>
       </body></html>
     `;
-    const w = window.open("", "_blank", "width=620,height=750");
+    const w = window.open("", "_blank", "width=660,height=820");
     if (!w) { showToast("error", "Popup blocked — please allow popups."); return; }
     w.document.write(receiptHtml);
     w.document.close();
@@ -2248,11 +2241,26 @@ export default function App() {
       <div className={`app-shell ${dark ? "dark-mode" : ""}`}>
         <div className="auth-screen">
           <div className="auth-card">
-            <div className="auth-brand-top">
-              {db.organizationLogo ? <img className="auth-logo" src={db.organizationLogo} alt="logo" /> : <div className="auth-logo-placeholder">Logo</div>}
-              <h1>{db.organizationLogoText || db.organizationName}</h1>
+            {/* ── Brand header ── */}
+            <div className="auth-brand-top" style={{ flexDirection: "column", alignItems: "center", textAlign: "center", gap: 14, marginBottom: 20 }}>
+              {db.organizationLogo
+                ? <img className="auth-logo" src={db.organizationLogo} alt="logo" style={{ width: 96, height: 96, borderRadius: 18 }} />
+                : <div className="auth-logo-placeholder" style={{ width: 96, height: 96, fontSize: 36, borderRadius: 18 }}>🏥</div>
+              }
+              <div>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#1e3a5f", lineHeight: 1.2 }}>
+                  {db.organizationLogoText || db.organizationName}
+                </h1>
+                <p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b", fontWeight: 500 }}>
+                  Finance Management System
+                </p>
+              </div>
             </div>
-            <p style={{ color: "#64748b", margin: "0 0 16px" }}>{t.signIn}</p>
+
+            {/* ── Divider ── */}
+            <div style={{ height: 1, background: "linear-gradient(90deg,transparent,#cbd5e1,transparent)", marginBottom: 20 }} />
+
+            <p style={{ color: "#64748b", margin: "0 0 18px", fontSize: 14, textAlign: "center" }}>{t.signIn}</p>
             {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
             <form className="auth-form" onSubmit={handleLogin} autoComplete="on">
               <label>Phone Number<input
@@ -2271,15 +2279,15 @@ export default function App() {
                 type="password"
                 inputMode="numeric"
                 maxLength={4}
-                placeholder="1234"
+                placeholder="••••"
                 value={loginForm.password}
                 onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
                 autoComplete="current-password"
                 style={{ fontSize: 16 }}
               /></label>
-              <button className="btn" type="submit" style={{ touchAction: "manipulation" }}>{t.login}</button>
+              <button className="btn" type="submit" style={{ touchAction: "manipulation", padding: "13px", fontSize: 15, borderRadius: 10, letterSpacing: "0.03em" }}>{t.login}</button>
             </form>
-            <button className="secondary-btn" style={{ marginTop: 6 }} onClick={() => setShowNewAcc(p => !p)}>{showNewAcc ? t.hideAccount : t.createAccount}</button>
+            <button className="secondary-btn" style={{ marginTop: 8, width: "100%", textAlign: "center" }} onClick={() => setShowNewAcc(p => !p)}>{showNewAcc ? t.hideAccount : t.createAccount}</button>
             {showNewAcc && (
               <div className="create-account-box">
                 <h3>{t.createAccount}</h3>
@@ -2293,7 +2301,9 @@ export default function App() {
                 </form>
               </div>
             )}
-            <button className="secondary-btn" style={{ marginTop: 8, background: "#2563eb", color: "white" }} onClick={() => setShowEmpPortal(true)}>👤 Employee Portal</button>
+            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+              <button className="secondary-btn" style={{ marginTop: 0, flex: 1, background: "#2563eb", color: "white", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onClick={() => setShowEmpPortal(true)}>👤 Employee Portal</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2307,7 +2317,23 @@ export default function App() {
       <div className="finance-dashboard">
         {/* SIDEBAR */}
         <aside className="sidebar">
-          <div className="brand-wrap">
+          {/* Mobile top bar — visible only on small screens */}
+          <div className="sidebar-mobile-top">
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {db.organizationLogo && <img className="brand-logo" src={db.organizationLogo} alt="logo" style={{ width: 36, height: 36 }} />}
+              <span className="brand" style={{ fontSize: 15 }}>{db.organizationLogoText || db.organizationName}</span>
+            </div>
+            <button
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen(p => !p)}
+              aria-label="Toggle menu"
+            >
+              {sidebarOpen ? "✕" : "☰"}
+            </button>
+          </div>
+
+          {/* Desktop brand */}
+          <div className="brand-wrap brand-wrap-desktop">
             {db.organizationLogo && <img className="brand-logo" src={db.organizationLogo} alt="logo" />}
             <div className="brand">{db.organizationLogoText || db.organizationName}</div>
           </div>
@@ -2315,11 +2341,11 @@ export default function App() {
             <label className="sidebar-upload-label" htmlFor="sl">Upload Logo</label>
             <input id="sl" className="sidebar-upload-input" type="file" accept="image/*" onChange={handleLogoUpload} />
           </div>
-          <nav className="menu">
+          <nav className={`menu${sidebarOpen ? " mobile-open" : ""}`}>
             {/* ---- Admin section ---- */}
             <div className="menu-group-label">ADMIN</div>
             {ADMIN_ITEMS.map((item, i) => (
-              <button key={item} className={section === item ? "active" : ""} onClick={() => { setSection(item); if (item === "Messages") markAdminMsgsRead(); }}>
+              <button key={item} className={section === item ? "active" : ""} onClick={() => { setSection(item); setSidebarOpen(false); if (item === "Messages") markAdminMsgsRead(); }}>
                 {(ADMIN_LABELS[lang] || ADMIN_LABELS.en)[i]}
                 {item === "Messages" && unreadAdmin > 0 && <span className="badge">{unreadAdmin}</span>}
                 {item === "Approve Expenses" && pendingExpenses.length > 0 && <span className="badge">{pendingExpenses.length}</span>}
@@ -3868,15 +3894,32 @@ export default function App() {
               const etYear = yr - 7;
               const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+              // Custom date range filter
+              const filterByRange = (entries) => {
+                const f = reportDateFrom ? new Date(reportDateFrom) : null;
+                const t = reportDateTo ? new Date(reportDateTo) : null;
+                return entries.filter(e => {
+                  const d = new Date(e.date);
+                  if (f && d < f) return false;
+                  if (t && d > t) return false;
+                  return true;
+                });
+              };
+
               const monthlyInc = db.incomeEntries.filter(e => { const d = new Date(e.date); return d.getFullYear() === yr && d.getMonth() === mo; });
               const monthlyExp = db.expenseEntries.filter(e => { const d = new Date(e.date); return d.getFullYear() === yr && d.getMonth() === mo; });
 
               const mData = buildStatementData(monthlyInc, monthlyExp);
               const aData = buildStatementData(db.incomeEntries, db.expenseEntries);
+              const rData = buildStatementData(filterByRange(db.incomeEntries), filterByRange(db.expenseEntries));
+
+              const rangeLabel = reportDateFrom && reportDateTo
+                ? `${reportDateFrom} → ${reportDateTo}`
+                : reportDateFrom ? `${reportDateFrom} →` : reportDateTo ? `→ ${reportDateTo}` : "ሁሉም ቀናት";
 
               const fmt = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-              const IncomeStatement = ({ data, periodLabel, isMonthly }) => (
+              const IncomeStatement = ({ data, periodLabel, subtitleLabel }) => (
                 <div className="income-statement-wrap">
                   {/* org logo if available */}
                   {db.organizationLogo && (
@@ -3887,9 +3930,7 @@ export default function App() {
                   <div className="is-header">
                     <div className="is-org">[{db.organizationLogoText || db.organizationName}]</div>
                     <div className="is-title">የገቢና ወጪ መግለጫ (Income Statement)</div>
-                    <div className="is-subtitle">
-                      ለ{etYear} አ.ም. ({isMonthly ? `For the Month of ${monthNames[mo]} ${yr}` : `For the Year Ended ${yr}`})
-                    </div>
+                    <div className="is-subtitle">{subtitleLabel}</div>
                   </div>
 
                   <table className="is-table">
@@ -4005,16 +4046,61 @@ export default function App() {
 
               return (
                 <section>
-                  <div className="report-tabs" style={{ display: "flex", gap: 10, marginBottom: 22 }}>
+                  {/* ── Tab buttons ── */}
+                  <div className="report-tabs" style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
                     {[
-                      ["monthly", `📅 ወርሃዊ ሪፖርት — ${monthNames[mo]} ${yr}`],
-                      ["annual", `📊 አመታዊ ሪፖርት — ${yr}`],
+                      ["monthly", `📅 ${monthNames[mo]} ${yr}`],
+                      ["annual", `📊 አመታዊ ${yr}`],
+                      ["custom", "📆 Custom Range"],
                     ].map(([k, l]) => (
                       <button key={k} className={`hrm-tab ${reportTab === k ? "active" : ""}`} onClick={() => setReportTab(k)}>{l}</button>
                     ))}
                   </div>
-                  {reportTab === "monthly" && <IncomeStatement data={mData} periodLabel={`${monthNames[mo]}_${yr}`} isMonthly={true} />}
-                  {reportTab === "annual" && <IncomeStatement data={aData} periodLabel={`Annual_${yr}`} isMonthly={false} />}
+
+                  {/* ── Custom date range picker ── */}
+                  {reportTab === "custom" && (
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap", marginBottom: 20, padding: "14px 18px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>ከ (From)</label>
+                        <input type="date" value={reportDateFrom} onChange={e => setReportDateFrom(e.target.value)}
+                          style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 14 }} />
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>እስከ (To)</label>
+                        <input type="date" value={reportDateTo} onChange={e => setReportDateTo(e.target.value)}
+                          style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 14 }} />
+                      </div>
+                      <button className="secondary-btn" style={{ marginTop: 0 }}
+                        onClick={() => { setReportDateFrom(""); setReportDateTo(""); }}>✕ Reset</button>
+                      {(reportDateFrom || reportDateTo) && (
+                        <div style={{ fontSize: 13, color: "#2563eb", fontWeight: 700, alignSelf: "flex-end", paddingBottom: 6 }}>
+                          {filterByRange(db.incomeEntries).length} ገቢ · {filterByRange(db.expenseEntries).length} ወጪ records
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {reportTab === "monthly" && (
+                    <IncomeStatement
+                      data={mData}
+                      periodLabel={`${monthNames[mo]}_${yr}`}
+                      subtitleLabel={`ለ${etYear} አ.ም. — For the Month of ${monthNames[mo]} ${yr}`}
+                    />
+                  )}
+                  {reportTab === "annual" && (
+                    <IncomeStatement
+                      data={aData}
+                      periodLabel={`Annual_${yr}`}
+                      subtitleLabel={`ለ${etYear} አ.ም. — For the Year Ended ${yr}`}
+                    />
+                  )}
+                  {reportTab === "custom" && (
+                    <IncomeStatement
+                      data={rData}
+                      periodLabel={`Custom_${rangeLabel.replace(/[\s→]/g, "_")}`}
+                      subtitleLabel={`Custom Range — ${rangeLabel}`}
+                    />
+                  )}
                 </section>
               );
             })()
