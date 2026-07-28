@@ -142,6 +142,7 @@ function loadStr(key, def = "") { return localStorage.getItem(key) || def; }
 
 export default function App() {
   const [db, setDb] = useState(loadDb);
+  localStorage.removeItem("dr_hibist_db"); // ወይም localStorage.clear();
   const [toast, setToast] = useState(null);
   const [section, setSection] = useState("Dashboard");
   const [isAdmin, setIsAdmin] = useState(() => loadBool(AUTH_KEY));
