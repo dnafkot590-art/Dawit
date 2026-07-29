@@ -5,13 +5,13 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #f4f7fb;
+  background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 45%, #f8fafc 100%);
   color: #0f172a;
 }
 
 .app-shell {
   min-height: 100vh;
-  background: #f4f7fb;
+  background: transparent;
   color: #0f172a;
 }
 
@@ -167,16 +167,19 @@ body {
 .finance-dashboard {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 280px 1fr;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.04), rgba(14, 165, 233, 0.04));
 }
 
 .sidebar {
-  background: #0f172a;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
   padding: 22px 18px;
   color: white;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  box-shadow: 8px 0 24px rgba(2, 6, 23, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-upload {
@@ -237,16 +240,24 @@ body {
 
 .menu button {
   border: none;
-  background: #1e293b;
+  background: rgba(255, 255, 255, 0.06);
   color: white;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   text-align: left;
+  transition: 180ms ease;
+  font-weight: 600;
+}
+
+.menu button:hover {
+  background: rgba(37, 99, 235, 0.24);
+  transform: translateX(2px);
 }
 
 .menu button.active {
-  background: #2563eb;
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.26);
 }
 
 .content {
@@ -259,6 +270,12 @@ body {
   align-items: center;
   margin-bottom: 20px;
   gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 }
 
 .topbar h1 {
@@ -370,9 +387,16 @@ body {
 
 .card {
   background: white;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 18px;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
 }
 
 .app-shell.dark-mode .card {
@@ -467,8 +491,13 @@ body {
 
 .metric {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
   margin: 0;
+  color: #0f172a;
+}
+
+.app-shell.dark-mode .metric {
+  color: #e2e8f0;
 }
 
 .form-grid {
@@ -515,24 +544,32 @@ body {
 
 .btn {
   margin-top: 14px;
-  background: #2563eb;
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   border: none;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.btn:hover,
+.secondary-btn:hover {
+  transform: translateY(-1px);
 }
 
 .secondary-btn {
   margin-top: 6px;
-  background: #e2e8f0;
+  background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 100%);
   color: #0f172a;
   border: none;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
 }
 
 .btn-danger {
@@ -618,6 +655,19 @@ table {
   border-bottom: 1px solid #e2e8f0;
   padding: 10px;
   text-align: left;
+}
+
+.report-table th {
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.app-shell.dark-mode .report-table th {
+  background: #0f172a;
+  color: #cbd5e1;
 }
 
 .report-table th:nth-child(2),
