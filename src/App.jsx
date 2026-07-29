@@ -220,6 +220,49 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("dr-hibist-weekly-v1") || "{}"); } catch { return {}; }
   });
 
+  // ========== LOAD FROM SUPABASE ON STARTUP ==========
+  useEffect(() => {
+    const loadFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clinic_data')
+          .select('data')
+          .eq('id', 'app_state')
+          .single();
+
+        if (error || !data) {
+          console.log('No remote data found — using local data.');
+          return;
+        }
+
+        const remote = data.data;
+        if (!remote) return;
+
+        // Merge: remote data ን local ን ጋር ማዋሃድ
+        const savedLogo = localStorage.getItem(LOGO_KEY) || remote.organizationLogo || '';
+        const merged = {
+          ...DEFAULT,
+          ...remote,
+          organizationLogo: savedLogo,
+          loginAccount: { ...DEFAULT.loginAccount, ...(remote.loginAccount || {}) },
+          employees: remote.employees || [],
+          leaveRequests: remote.leaveRequests || [],
+          messages: remote.messages || [],
+          announcements: remote.announcements || [],
+          resignations: remote.resignations || [],
+          balanceSheet: remote.balanceSheet
+            ? { ...DEFAULT.balanceSheet, ...remote.balanceSheet }
+            : DEFAULT.balanceSheet,
+        };
+        setDb(merged);
+        console.log('Data loaded from Supabase successfully.');
+      } catch (err) {
+        console.error('Failed to load from Supabase:', err);
+      }
+    };
+    loadFromSupabase();
+  }, []); // once on mount
+
   // ========== AUTO-SAVE TO SUPABASE ==========
   useEffect(() => {
     if (!db) return;
