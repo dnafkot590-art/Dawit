@@ -2278,6 +2278,13 @@ export default function App() {
       <div className="finance-dashboard">
         {/* SIDEBAR */}
         <aside className="sidebar">
+          <div className="brand-wrap" style={{ marginBottom: 8 }}>
+            <div className="brand-logo" style={{ display: "grid", placeItems: "center", fontSize: 18 }}>🏥</div>
+            <div className="brand" style={{ fontSize: 16, lineHeight: 1.2 }}>
+              {(db.organizationLogoText || db.organizationName || "Dr Hibist").toString().slice(0, 24)}
+            </div>
+          </div>
+
           <div className="sidebar-mobile-top">
             <button
               className="sidebar-menu-toggle"
