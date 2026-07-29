@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import XLSXStyle from "xlsx-js-style";
 import IncomeRegistration from "./components/IncomeRegistration.jsx";
 import ExpenseRegistration from "./components/ExpenseRegistration.jsx";
+import { supabase } from "./supabaseClient.js";
 
 const STORAGE_KEY = "dr-hibist-v3";
 const AUTH_KEY = "dr-hibist-auth-v1";
@@ -121,6 +122,10 @@ const DEFAULT = {
   },
 };
 
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function loadDb() {
   try {
     const p = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
@@ -142,30 +147,41 @@ function loadStr(key, def = "") { return localStorage.getItem(key) || def; }
 
 export default function App() {
 
+  // ========== CORE STATE ==========
+  const [db, setDb] = useState(() => loadDb());
+  const [isAdmin, setIsAdmin] = useState(() => loadBool(AUTH_KEY));
+  const [dark, setDark] = useState(() => loadBool(DARK_KEY));
+  const [lang, setLang] = useState(() => loadStr(LANG_KEY, "en"));
+  const [section, setSection] = useState("Dashboard");
+  const [hrmTab, setHrmTab] = useState("employees");
+  const [financeTab, setFinanceTab] = useState("income");
+  const [reportTab, setReportTab] = useState("monthly");
+  const [toast, setToast] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // አውቶማቲክ ፑሽ (Auto-save) ኮድ - ትክክለኛው ቦታው እዚህ ከስቴቶች በታች ነው
-  useEffect(() => {
-    if (!db) return;
+  // Auth / portal
+  const [loginForm, setLoginForm] = useState({ phoneNumber: "", password: "" });
+  const [showNewAcc, setShowNewAcc] = useState(false);
+  const [newAccForm, setNewAccForm] = useState({ fullName: "", creditAccount: "", phoneNumber: "", email: "", password: "" });
+  const [showEmpPortal, setShowEmpPortal] = useState(false);
+  const [empLoggedIn, setEmpLoggedIn] = useState(null);
+  const [empLoginForm, setEmpLoginForm] = useState({ phone: "", password: "" });
+  const [empMsgBody, setEmpMsgBody] = useState("");
 
-    const autoSaveTimer = setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from('clinic_data')
-          .upsert({ id: 'app_state', data: db });
-
-        if (error) {
-          console.error('Error auto-syncing to Supabase:', error);
-        } else {
-          console.log('Changes synced to Supabase automatically.');
-        }
-      } catch (err) {
-        console.error('Auto-sync failed:', err);
-      }
-    }, 1500);
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [db]);
-
+  // Forms
+  const [incomeForm, setIncomeForm] = useState({ category: "Clinic income", amount: "", notes: "", bankId: "", date: today() });
+  const [expenseForm, setExpenseForm] = useState({ category: "Salary", amount: "", notes: "", bankId: "", date: today() });
+  const [bankForm, setBankForm] = useState({ name: "", accountNumber: "", initialBalance: "" });
+  const [debtForm, setDebtForm] = useState({ organization: "", total: "", paid: "", status: "Pending", date: today() });
+  const [empForm, setEmpForm] = useState({ name: "", department: "Doctor", phone: "", bankAccount: "", hireDate: today(), basicSalary: "" });
+  const [leaveForm, setLeaveForm] = useState({ empId: "", days: "", startDate: today(), reason: "", leaveType: "annual" });
+  const [msgForm, setMsgForm] = useState({ toId: "", body: "" });
+  const [createUserForm, setCreateUserForm] = useState({ empId: "", phone: "", password: "", department: "" });
+  const [leaveDaysForm, setLeaveDaysForm] = useState({ empId: "", days: "25" });
+  const [payrollBankId, setPayrollBankId] = useState("");
+  const [payrollDate, setPayrollDate] = useState(today());
+  const [payrollEdit, setPayrollEdit] = useState({});
+  const [bsForm, setBsForm] = useState({});
   const [bsEditing, setBsEditing] = useState(false);
   // Leave approval with adjustment
   const [leaveApproveEdit, setLeaveApproveEdit] = useState({}); // {reqId: adjustedDays}
@@ -203,6 +219,26 @@ export default function App() {
   const [doctorWeeklyHistory, setDoctorWeeklyHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem("dr-hibist-weekly-v1") || "{}"); } catch { return {}; }
   });
+
+  // ========== AUTO-SAVE TO SUPABASE ==========
+  useEffect(() => {
+    if (!db) return;
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('clinic_data')
+          .upsert({ id: 'app_state', data: db });
+        if (error) {
+          console.error('Error auto-syncing to Supabase:', error);
+        } else {
+          console.log('Changes synced to Supabase automatically.');
+        }
+      } catch (err) {
+        console.error('Auto-sync failed:', err);
+      }
+    }, 1500);
+    return () => clearTimeout(autoSaveTimer);
+  }, [db]);
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }, [db]);
   useEffect(() => { localStorage.setItem(AUTH_KEY, String(isAdmin)); }, [isAdmin]);
