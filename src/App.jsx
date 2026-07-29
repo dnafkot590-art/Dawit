@@ -16,6 +16,16 @@ const DEPARTMENTS = [
   "Pharmacy", "ጉዳይ አስፈሳሚ", "Other",
 ];
 
+const DOCTOR_BASIS_LABELS = {
+  all: "ሁሉም አገልግሎቶች",
+  card: "ካርድ",
+  lab: "ላብራቶሪ",
+  imaging: "ኢሜጂንግ",
+  duty: "ዲውቲ",
+  procedure: "ፕሮሲጀር",
+  round: "ራውንድ",
+};
+
 // Admin-level menu items
 const ADMIN_ITEMS = [
   "Dashboard",
@@ -549,7 +559,7 @@ export default function App() {
   };
 
   // ---- Doctor weekly revenue calculator ----
-  const getDoctorForm = (empId) => doctorWeeklyForm[String(empId)] || { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15" };
+  const getDoctorForm = (empId) => doctorWeeklyForm[String(empId)] || { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15", basis: "all" };
 
   const setDoctorField = (empId, field, val) => {
     setDoctorWeeklyForm(p => ({ ...p, [String(empId)]: { ...getDoctorForm(empId), [field]: val } }));
@@ -563,10 +573,24 @@ export default function App() {
     const duty = Number(f.duty) || 0;
     const procedure = Number(f.procedure) || 0;
     const round = Number(f.round) || 0;
-    const total = card + lab + imaging + duty + procedure + round;
+    const allTotal = card + lab + imaging + duty + procedure + round;
+    const basis = f.basis || "all";
+    const selectedTotal = basis === "card"
+      ? card
+      : basis === "lab"
+        ? lab
+        : basis === "imaging"
+          ? imaging
+          : basis === "duty"
+            ? duty
+            : basis === "procedure"
+              ? procedure
+              : basis === "round"
+                ? round
+                : allTotal;
     const percent = Number.isFinite(Number(f.percentage)) && Number(f.percentage) > 0 ? Number(f.percentage) : 15;
-    const doctorCut = Math.round(total * (percent / 100) * 100) / 100;
-    return { card, lab, imaging, duty, procedure, round, total, percent, doctorCut };
+    const doctorCut = Math.round(selectedTotal * (percent / 100) * 100) / 100;
+    return { card, lab, imaging, duty, procedure, round, total: allTotal, basis, selectedTotal, percent, doctorCut };
   };
 
   const saveDoctorWeekly = (emp) => {
@@ -584,6 +608,7 @@ export default function App() {
       duty: f.duty, procedure: f.procedure, round: f.round,
       bankId: f.bankId,
       percentage: f.percentage || "15",
+      basis: f.basis || "all",
       status: "Pending",
       ...calc,
     };
@@ -592,7 +617,7 @@ export default function App() {
       ...p,
       [key]: [entry, ...(p[key] || [])].slice(0, 20),
     }));
-    setDoctorWeeklyForm(p => ({ ...p, [String(emp.id)]: { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15" } }));
+    setDoctorWeeklyForm(p => ({ ...p, [String(emp.id)]: { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15", basis: "all" } }));
     showToast("success", `${emp.name} — ${calc.doctorCut.toLocaleString()} Birr (${calc.percent}%) ቀርቧል። Admin approval ይጠብቁ።`);
   };
 
@@ -2074,6 +2099,18 @@ export default function App() {
                                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                   </div>
                                   <div className="dw-field">
+                                    <label>🧾 የሚቆጠር ምርት/አገልግሎት</label>
+                                    <select
+                                      value={f.basis || "all"}
+                                      onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
+                                      style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
+                                    >
+                                      {Object.entries(DOCTOR_BASIS_LABELS).map(([value, label]) => (
+                                        <option key={value} value={value}>{label}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="dw-field">
                                     <label>🩻 ኢሜጂንግ ብዛት</label>
                                     <input type="number" placeholder="0" value={f.imagingCount} onChange={ev => setDoctorField(emp.id, "imagingCount", ev.target.value)} />
                                   </div>
@@ -2105,7 +2142,7 @@ export default function App() {
                                       {calc.duty > 0 && <div className="dw-brow"><span>ዲውቲ</span><strong>{calc.duty.toLocaleString()} Birr</strong></div>}
                                       {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
                                       {calc.round > 0 && <div className="dw-brow"><span>ራውንድ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
-                                      <div className="dw-brow dw-brow-total"><span>ጠቅላላ ገቢ</span><strong>{calc.total.toLocaleString()} Birr</strong></div>
+                                      <div className="dw-brow dw-brow-total"><span>ጠቅላላ {DOCTOR_BASIS_LABELS[calc.basis] || "ገቢ"}</span><strong>{calc.selectedTotal.toLocaleString()} Birr</strong></div>
                                       <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
                                     </div>
                                   </div>
@@ -2836,6 +2873,18 @@ export default function App() {
                                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                 </div>
                                 <div className="dw-field">
+                                  <label>🧾 የሚቆጠር ምርት/አገልግሎት</label>
+                                  <select
+                                    value={f.basis || "all"}
+                                    onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
+                                    style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
+                                  >
+                                    {Object.entries(DOCTOR_BASIS_LABELS).map(([value, label]) => (
+                                      <option key={value} value={value}>{label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="dw-field">
                                   <label>🩻 ኢሜጂንግ ብዛት</label>
                                   <input type="number" placeholder="0" value={f.imagingCount} onChange={ev => setDoctorField(emp.id, "imagingCount", ev.target.value)} />
                                 </div>
@@ -2868,7 +2917,7 @@ export default function App() {
                                     {calc.duty > 0 && <div className="dw-brow"><span>ዲውቲ</span><strong>{calc.duty.toLocaleString()} Birr</strong></div>}
                                     {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
                                     {calc.round > 0 && <div className="dw-brow"><span>ራውንድ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
-                                    <div className="dw-brow dw-brow-total"><span>ጠቅላላ ገቢ</span><strong>{calc.total.toLocaleString()} Birr</strong></div>
+                                    <div className="dw-brow dw-brow-total"><span>ጠቅላላ {DOCTOR_BASIS_LABELS[calc.basis] || "ገቢ"}</span><strong>{calc.selectedTotal.toLocaleString()} Birr</strong></div>
                                     <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
                                   </div>
                                 </div>
