@@ -1824,12 +1824,19 @@ td {
   border-bottom-color: #1e293b;
 }
 
-/* Input grid — 2 columns, lab spans full width */
+/* Input grid — compact 3-column layout */
 .doctor-weekly-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.doctor-weekly-options-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 0.8fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .dw-field {
@@ -1852,8 +1859,9 @@ td {
   color: #94a3b8;
 }
 
-.dw-field input {
-  padding: 9px 12px;
+.dw-field input,
+.dw-field select {
+  padding: 8px 10px;
   border: 1.5px solid #cbd5e1;
   border-radius: 8px;
   font: inherit;
@@ -1863,20 +1871,24 @@ td {
   transition: border-color 0.15s;
 }
 
-.app-shell.dark-mode .dw-field input {
+.app-shell.dark-mode .dw-field input,
+.app-shell.dark-mode .dw-field select {
   background: #0f172a;
   color: #e2e8f0;
   border-color: #334155;
 }
 
-.dw-field input:focus {
+.dw-field input:focus,
+.dw-field select:focus,
+.dw-field select:focus {
   outline: none;
   border-color: #2563eb;
   background: white;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.app-shell.dark-mode .dw-field input:focus {
+.app-shell.dark-mode .dw-field input:focus,
+.app-shell.dark-mode .dw-field select:focus {
   background: #1e293b;
 }
 
@@ -1969,7 +1981,9 @@ td {
 }
 
 @media (max-width: 600px) {
-  .doctor-weekly-grid {
+
+  .doctor-weekly-grid,
+  .doctor-weekly-options-grid {
     grid-template-columns: 1fr;
   }
 

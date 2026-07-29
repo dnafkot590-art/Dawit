@@ -2091,12 +2091,38 @@ export default function App() {
                                 </div>
 
                                 <div className="doctor-weekly-grid">
+                                  <div className="dw-field">
+                                    <label>🃏 ካርድ</label>
+                                    <input type="number" placeholder="0.00" value={f.cardAmount ?? ""} onChange={ev => setDoctorField(emp.id, "cardAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🔬 ላብራቶሪ</label>
+                                    <input type="number" placeholder="0.00" value={f.labAmount ?? ""} onChange={ev => setDoctorField(emp.id, "labAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🩻 ኢሜጂንግ</label>
+                                    <input type="number" placeholder="0.00" value={f.imagingAmount ?? ""} onChange={ev => setDoctorField(emp.id, "imagingAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>💬 ኮንሰልቴሽን</label>
+                                    <input type="number" placeholder="0.00" value={f.consultationAmount ?? ""} onChange={ev => setDoctorField(emp.id, "consultationAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🏥 ፕሮሲጀር</label>
+                                    <input type="number" placeholder="0.00" value={f.procedureAmount ?? ""} onChange={ev => setDoctorField(emp.id, "procedureAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🔄 ራውንድ</label>
+                                    <input type="number" placeholder="0.00" value={f.roundAmount ?? ""} onChange={ev => setDoctorField(emp.id, "roundAmount", ev.target.value)} />
+                                  </div>
+                                </div>
+
+                                <div className="doctor-weekly-options-grid">
                                   <div className="dw-field dw-field-full">
-                                    <label>🧑‍⚕️ ዶክተር ስም</label>
+                                    <label>🧑‍⚕️ ዶክተር</label>
                                     <select
                                       value={f.doctorId || String(emp.id)}
                                       onChange={ev => setDoctorField(emp.id, "doctorId", ev.target.value)}
-                                      style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
                                     >
                                       {(db.employees || []).filter(e => e.department === "Doctor").map(doc => (
                                         <option key={doc.id} value={String(doc.id)}>{doc.name}</option>
@@ -2104,43 +2130,29 @@ export default function App() {
                                     </select>
                                   </div>
                                   <div className="dw-field">
-                                    <label>🃏 ካርድ ብር መሳፈያ</label>
-                                    <input type="number" placeholder="0.00" value={f.cardAmount ?? ""} onChange={ev => setDoctorField(emp.id, "cardAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🔬 ላብራቶሪ ብር መሳፈያ</label>
-                                    <input type="number" placeholder="0.00" value={f.labAmount ?? ""} onChange={ev => setDoctorField(emp.id, "labAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🩻 ኢሜጂንግ ብር መሳፈያ</label>
-                                    <input type="number" placeholder="0.00" value={f.imagingAmount ?? ""} onChange={ev => setDoctorField(emp.id, "imagingAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>💬 ኮንሰልቴሽን ብር መሳፈያ</label>
-                                    <input type="number" placeholder="0.00" value={f.consultationAmount ?? ""} onChange={ev => setDoctorField(emp.id, "consultationAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🏥 ፕሮሲጀር ብር መሳፈያ</label>
-                                    <input type="number" placeholder="0.00" value={f.procedureAmount ?? ""} onChange={ev => setDoctorField(emp.id, "procedureAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🔄 ራውንድ ብር መሳፈያ</label>
-                                    <input type="number" placeholder="0.00" value={f.roundAmount ?? ""} onChange={ev => setDoctorField(emp.id, "roundAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>📈 ክፍያ መቶኛ (%)</label>
+                                    <label>📈 መቶኛ (%)</label>
                                     <input type="number" min="0" step="0.1" placeholder="15" value={f.percentage ?? "15"} onChange={ev => setDoctorField(emp.id, "percentage", ev.target.value)} />
-                                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                   </div>
                                   <div className="dw-field">
-                                    <label>🧾 የሚቆጠር አገልግሎት</label>
+                                    <label>🧾 አገልግሎት</label>
                                     <select
                                       value={f.basis || "all"}
                                       onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
-                                      style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
                                     >
                                       {Object.entries(DOCTOR_BASIS_LABELS).map(([value, label]) => (
                                         <option key={value} value={value}>{label}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🏦 ባንክ</label>
+                                    <select
+                                      value={f.bankId}
+                                      onChange={ev => setDoctorField(emp.id, "bankId", ev.target.value)}
+                                    >
+                                      <option value="">— ባንክ ምረጥ —</option>
+                                      {(db.bankAccounts || []).map(b => (
+                                        <option key={b.id} value={b.id}>{b.name} ({b.accountNumber})</option>
                                       ))}
                                     </select>
                                   </div>
@@ -2161,21 +2173,6 @@ export default function App() {
                                     </div>
                                   </div>
                                 )}
-
-                                {/* Bank selector */}
-                                <div className="dw-field" style={{ marginTop: 10 }}>
-                                  <label>🏦 ክፍያ የሚከፈልበት / የሚቆረጥበት ባንክ</label>
-                                  <select
-                                    value={f.bankId}
-                                    onChange={ev => setDoctorField(emp.id, "bankId", ev.target.value)}
-                                    style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
-                                  >
-                                    <option value="">— ባንክ ምረጥ —</option>
-                                    {(db.bankAccounts || []).map(b => (
-                                      <option key={b.id} value={b.id}>{b.name} ({b.accountNumber})</option>
-                                    ))}
-                                  </select>
-                                </div>
 
                                 <button className="btn" style={{ marginTop: 8, width: "100%" }} onClick={() => saveDoctorWeekly(emp)}>
                                   📤 ሳምንታዊ ክፍያ ለ Admin ላክ
