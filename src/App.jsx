@@ -21,7 +21,7 @@ const DOCTOR_BASIS_LABELS = {
   card: "ካርድ",
   lab: "ላብራቶሪ",
   imaging: "ኢሜጂንግ",
-  duty: "ዲውቲ",
+  consultation: "ኮንሰልቴሽን",
   procedure: "ፕሮሲጀር",
   round: "ራውንድ",
 };
@@ -559,21 +559,26 @@ export default function App() {
   };
 
   // ---- Doctor weekly revenue calculator ----
-  const getDoctorForm = (empId) => doctorWeeklyForm[String(empId)] || { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15", basis: "all" };
+  const getDoctorForm = (empId) => doctorWeeklyForm[String(empId)] || { cardAmount: "", labAmount: "", imagingAmount: "", consultationAmount: "", procedureAmount: "", roundAmount: "", bankId: "", percentage: "15", basis: "all", doctorId: String(empId) };
 
   const setDoctorField = (empId, field, val) => {
     setDoctorWeeklyForm(p => ({ ...p, [String(empId)]: { ...getDoctorForm(empId), [field]: val } }));
   };
 
+  const getDoctorWeeklyHistoryForEmp = (empId) => {
+    const targetId = String(empId);
+    return Object.values(doctorWeeklyHistory || {}).flatMap(list => (Array.isArray(list) ? list : [])).filter(entry => String(entry.doctorId || entry.empId || "") === targetId);
+  };
+
   const calcDoctorWeekly = (empId) => {
     const f = getDoctorForm(empId);
-    const card = (Number(f.cardCount) || 0) * (Number(f.cardPrice) || 0);
-    const lab = Number(f.labTotal) || 0;
-    const imaging = (Number(f.imagingCount) || 0) * (Number(f.imagingPrice) || 0);
-    const duty = Number(f.duty) || 0;
-    const procedure = Number(f.procedure) || 0;
-    const round = Number(f.round) || 0;
-    const allTotal = card + lab + imaging + duty + procedure + round;
+    const card = Number(f.cardAmount ?? ((Number(f.cardCount) || 0) * (Number(f.cardPrice) || 0))) || 0;
+    const lab = Number(f.labAmount ?? f.labTotal) || 0;
+    const imaging = Number(f.imagingAmount ?? ((Number(f.imagingCount) || 0) * (Number(f.imagingPrice) || 0))) || 0;
+    const consultation = Number(f.consultationAmount ?? f.duty) || 0;
+    const procedure = Number(f.procedureAmount ?? f.procedure) || 0;
+    const round = Number(f.roundAmount ?? f.round) || 0;
+    const allTotal = card + lab + imaging + consultation + procedure + round;
     const basis = f.basis || "all";
     const selectedTotal = basis === "card"
       ? card
@@ -581,8 +586,8 @@ export default function App() {
         ? lab
         : basis === "imaging"
           ? imaging
-          : basis === "duty"
-            ? duty
+          : basis === "consultation"
+            ? consultation
             : basis === "procedure"
               ? procedure
               : basis === "round"
@@ -590,7 +595,7 @@ export default function App() {
                 : allTotal;
     const percent = Number.isFinite(Number(f.percentage)) && Number(f.percentage) > 0 ? Number(f.percentage) : 15;
     const doctorCut = Math.round(selectedTotal * (percent / 100) * 100) / 100;
-    return { card, lab, imaging, duty, procedure, round, total: allTotal, basis, selectedTotal, percent, doctorCut };
+    return { card, lab, imaging, consultation, procedure, round, total: allTotal, basis, selectedTotal, percent, doctorCut };
   };
 
   const saveDoctorWeekly = (emp) => {
@@ -598,26 +603,31 @@ export default function App() {
     const f = getDoctorForm(emp.id);
     if (calc.total === 0) { showToast("error", "ምንም ዋጋ አልተሞላም።"); return; }
     if (!f.bankId) { showToast("error", "ክፍያ የሚከፈልበት ባንክ ይምረጡ።"); return; }
+    const targetDoctorId = String(f.doctorId || emp.id);
     const entry = {
       id: Date.now(),
       date: today(),
       weekLabel: `ሳምንት — ${today()}`,
-      cardCount: f.cardCount, cardPrice: f.cardPrice,
-      labTotal: f.labTotal,
-      imagingCount: f.imagingCount, imagingPrice: f.imagingPrice,
-      duty: f.duty, procedure: f.procedure, round: f.round,
+      cardAmount: f.cardAmount,
+      labAmount: f.labAmount,
+      imagingAmount: f.imagingAmount,
+      consultationAmount: f.consultationAmount,
+      procedureAmount: f.procedureAmount,
+      roundAmount: f.roundAmount,
       bankId: f.bankId,
       percentage: f.percentage || "15",
       basis: f.basis || "all",
+      doctorId: targetDoctorId,
+      doctorName: (db.employees || []).find(e => String(e.id) === targetDoctorId)?.name || emp.name,
       status: "Pending",
       ...calc,
     };
-    const key = String(emp.id);
+    const key = targetDoctorId;
     setDoctorWeeklyHistory(p => ({
       ...p,
       [key]: [entry, ...(p[key] || [])].slice(0, 20),
     }));
-    setDoctorWeeklyForm(p => ({ ...p, [String(emp.id)]: { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15", basis: "all" } }));
+    setDoctorWeeklyForm(p => ({ ...p, [String(emp.id)]: { cardAmount: "", labAmount: "", imagingAmount: "", consultationAmount: "", procedureAmount: "", roundAmount: "", bankId: "", percentage: "15", basis: "all", doctorId: String(emp.id) } }));
     showToast("success", `${emp.name} — ${calc.doctorCut.toLocaleString()} Birr (${calc.percent}%) ቀርቧል። Admin approval ይጠብቁ።`);
   };
 
@@ -1471,7 +1481,7 @@ export default function App() {
 
                     {/* Doctor weekly summary — Doctor dept ብቻ */}
                     {emp.department === "Doctor" && (() => {
-                      const history = doctorWeeklyHistory[String(emp.id)] || [];
+                      const history = getDoctorWeeklyHistoryForEmp(emp.id);
                       const approvedHistory = history.filter(h => h.status === "Approved");
                       const totalAllTime = approvedHistory.reduce((s, h) => s + Number(h.total || 0), 0);
                       const totalCutAllTime = approvedHistory.reduce((s, h) => s + Number(h.doctorCut || 0), 0);
@@ -2057,7 +2067,7 @@ export default function App() {
                           {(db.employees || []).filter(e => e.department === "Doctor").map(emp => {
                             const f = getDoctorForm(emp.id);
                             const calc = calcDoctorWeekly(emp.id);
-                            const history = (doctorWeeklyHistory[String(emp.id)] || []);
+                            const history = getDoctorWeeklyHistoryForEmp(emp.id);
                             return (
                               <div key={emp.id} className="doctor-weekly-card">
                                 <div className="doctor-weekly-header">
@@ -2081,17 +2091,41 @@ export default function App() {
                                 </div>
 
                                 <div className="doctor-weekly-grid">
-                                  <div className="dw-field">
-                                    <label>🃏 ካርድ ብዛት</label>
-                                    <input type="number" placeholder="0" value={f.cardCount} onChange={ev => setDoctorField(emp.id, "cardCount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>💵 የካርድ ዋጋ (Birr)</label>
-                                    <input type="number" placeholder="0.00" value={f.cardPrice} onChange={ev => setDoctorField(emp.id, "cardPrice", ev.target.value)} />
-                                  </div>
                                   <div className="dw-field dw-field-full">
-                                    <label>🔬 ላብራቶሪ አጠቃላይ ብር</label>
-                                    <input type="number" placeholder="0.00" value={f.labTotal} onChange={ev => setDoctorField(emp.id, "labTotal", ev.target.value)} />
+                                    <label>🧑‍⚕️ ዶክተር ስም</label>
+                                    <select
+                                      value={f.doctorId || String(emp.id)}
+                                      onChange={ev => setDoctorField(emp.id, "doctorId", ev.target.value)}
+                                      style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
+                                    >
+                                      {(db.employees || []).filter(e => e.department === "Doctor").map(doc => (
+                                        <option key={doc.id} value={String(doc.id)}>{doc.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🃏 ካርድ ብር መሳፈያ</label>
+                                    <input type="number" placeholder="0.00" value={f.cardAmount ?? ""} onChange={ev => setDoctorField(emp.id, "cardAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🔬 ላብራቶሪ ብር መሳፈያ</label>
+                                    <input type="number" placeholder="0.00" value={f.labAmount ?? ""} onChange={ev => setDoctorField(emp.id, "labAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🩻 ኢሜጂንግ ብር መሳፈያ</label>
+                                    <input type="number" placeholder="0.00" value={f.imagingAmount ?? ""} onChange={ev => setDoctorField(emp.id, "imagingAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>💬 ኮንሰልቴሽን ብር መሳፈያ</label>
+                                    <input type="number" placeholder="0.00" value={f.consultationAmount ?? ""} onChange={ev => setDoctorField(emp.id, "consultationAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🏥 ፕሮሲጀር ብር መሳፈያ</label>
+                                    <input type="number" placeholder="0.00" value={f.procedureAmount ?? ""} onChange={ev => setDoctorField(emp.id, "procedureAmount", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>🔄 ራውንድ ብር መሳፈያ</label>
+                                    <input type="number" placeholder="0.00" value={f.roundAmount ?? ""} onChange={ev => setDoctorField(emp.id, "roundAmount", ev.target.value)} />
                                   </div>
                                   <div className="dw-field">
                                     <label>📈 ክፍያ መቶኛ (%)</label>
@@ -2099,7 +2133,7 @@ export default function App() {
                                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                   </div>
                                   <div className="dw-field">
-                                    <label>🧾 የሚቆጠር ምርት/አገልግሎት</label>
+                                    <label>🧾 የሚቆጠር አገልግሎት</label>
                                     <select
                                       value={f.basis || "all"}
                                       onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
@@ -2110,38 +2144,18 @@ export default function App() {
                                       ))}
                                     </select>
                                   </div>
-                                  <div className="dw-field">
-                                    <label>🩻 ኢሜጂንግ ብዛት</label>
-                                    <input type="number" placeholder="0" value={f.imagingCount} onChange={ev => setDoctorField(emp.id, "imagingCount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>💵 የኢሜጂንግ ዋጋ (Birr)</label>
-                                    <input type="number" placeholder="0.00" value={f.imagingPrice} onChange={ev => setDoctorField(emp.id, "imagingPrice", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>⏰ ዲውቲ (Birr)</label>
-                                    <input type="number" placeholder="0.00" value={f.duty} onChange={ev => setDoctorField(emp.id, "duty", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🏥 ፕሮሲጀር (Birr)</label>
-                                    <input type="number" placeholder="0.00" value={f.procedure} onChange={ev => setDoctorField(emp.id, "procedure", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🔄 ራውንድ (Birr)</label>
-                                    <input type="number" placeholder="0.00" value={f.round} onChange={ev => setDoctorField(emp.id, "round", ev.target.value)} />
-                                  </div>
                                 </div>
 
                                 {calc.total > 0 && (
                                   <div className="dw-breakdown">
                                     <div className="dw-breakdown-title">📊 ዝርዝር ሂሳብ</div>
                                     <div className="dw-breakdown-grid">
-                                      {calc.card > 0 && <div className="dw-brow"><span>ካርድ ({f.cardCount} × {Number(f.cardPrice).toLocaleString()})</span><strong>{calc.card.toLocaleString()} Birr</strong></div>}
-                                      {calc.lab > 0 && <div className="dw-brow"><span>ላብራቶሪ</span><strong>{calc.lab.toLocaleString()} Birr</strong></div>}
-                                      {calc.imaging > 0 && <div className="dw-brow"><span>ኢሜጂንግ ({f.imagingCount} × {Number(f.imagingPrice).toLocaleString()})</span><strong>{calc.imaging.toLocaleString()} Birr</strong></div>}
-                                      {calc.duty > 0 && <div className="dw-brow"><span>ዲውቲ</span><strong>{calc.duty.toLocaleString()} Birr</strong></div>}
-                                      {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
-                                      {calc.round > 0 && <div className="dw-brow"><span>ራውንድ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
+                                      {calc.card > 0 && <div className="dw-brow"><span>ካርድ ብር መሳፈያ</span><strong>{calc.card.toLocaleString()} Birr</strong></div>}
+                                      {calc.lab > 0 && <div className="dw-brow"><span>ላብራቶሪ ብር መሳፈያ</span><strong>{calc.lab.toLocaleString()} Birr</strong></div>}
+                                      {calc.imaging > 0 && <div className="dw-brow"><span>ኢሜጂንግ ብር መሳፈያ</span><strong>{calc.imaging.toLocaleString()} Birr</strong></div>}
+                                      {calc.consultation > 0 && <div className="dw-brow"><span>ኮንሰልቴሽን ብር መሳፈያ</span><strong>{calc.consultation.toLocaleString()} Birr</strong></div>}
+                                      {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር ብር መሳፈያ</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
+                                      {calc.round > 0 && <div className="dw-brow"><span>ራውንድ ብር መሳፈያ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
                                       <div className="dw-brow dw-brow-total"><span>ጠቅላላ {DOCTOR_BASIS_LABELS[calc.basis] || "ገቢ"}</span><strong>{calc.selectedTotal.toLocaleString()} Birr</strong></div>
                                       <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
                                     </div>
@@ -2180,9 +2194,9 @@ export default function App() {
                                             <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ: {Number(h.total).toLocaleString()} Birr · ባንክ: {bank?.name || "—"}</div>
                                           </div>
                                           <div style={{ display: "flex", gap: 6 }}>
-                                            <button className="btn btn-sm" style={{ marginTop: 0, padding: "5px 14px", fontSize: 12, background: "#16a34a" }} onClick={() => approveDoctorWeekly(emp.id, h.id)}>✅ Approve</button>
-                                            <button className="btn-danger btn-sm" onClick={() => rejectDoctorWeekly(emp.id, h.id)}>❌ Reject</button>
-                                            <button className="btn-danger btn-sm" onClick={() => deleteDoctorWeeklyEntry(emp.id, h.id)}>🗑️</button>
+                                            <button className="btn btn-sm" style={{ marginTop: 0, padding: "5px 14px", fontSize: 12, background: "#16a34a" }} onClick={() => approveDoctorWeekly(h.doctorId || emp.id, h.id)}>✅ Approve</button>
+                                            <button className="btn-danger btn-sm" onClick={() => rejectDoctorWeekly(h.doctorId || emp.id, h.id)}>❌ Reject</button>
+                                            <button className="btn-danger btn-sm" onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button>
                                           </div>
                                         </div>
                                       );
@@ -2207,7 +2221,7 @@ export default function App() {
                                               <td style={{ fontWeight: 700 }}>{Number(h.total).toLocaleString()} Birr</td>
                                               <td style={{ color: "#16a34a", fontWeight: 700 }}>{Number(h.doctorCut).toLocaleString()} Birr</td>
                                               <td><span className={`status-badge ${h.status === "Approved" ? "approved" : "rejected"}`}>{h.status === "Approved" ? "✅ Approved" : "❌ Rejected"}</span></td>
-                                              <td><button className="btn-danger btn-sm" style={{ padding: "2px 6px", fontSize: 11 }} onClick={() => deleteDoctorWeeklyEntry(emp.id, h.id)}>🗑️</button></td>
+                                              <td><button className="btn-danger btn-sm" style={{ padding: "2px 6px", fontSize: 11 }} onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button></td>
                                             </tr>
                                           );
                                         })}
@@ -2855,17 +2869,41 @@ export default function App() {
 
                               {/* Input grid */}
                               <div className="doctor-weekly-grid">
-                                <div className="dw-field">
-                                  <label>🃏 ካርድ ብዛት</label>
-                                  <input type="number" placeholder="0" value={f.cardCount} onChange={ev => setDoctorField(emp.id, "cardCount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>💵 የካርድ ዋጋ (Birr)</label>
-                                  <input type="number" placeholder="0.00" value={f.cardPrice} onChange={ev => setDoctorField(emp.id, "cardPrice", ev.target.value)} />
-                                </div>
                                 <div className="dw-field dw-field-full">
-                                  <label>🔬 ላብራቶሪ አጠቃላይ ብር</label>
-                                  <input type="number" placeholder="0.00" value={f.labTotal} onChange={ev => setDoctorField(emp.id, "labTotal", ev.target.value)} />
+                                  <label>🧑‍⚕️ ዶክተር ስም</label>
+                                  <select
+                                    value={f.doctorId || String(emp.id)}
+                                    onChange={ev => setDoctorField(emp.id, "doctorId", ev.target.value)}
+                                    style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
+                                  >
+                                    {(db.employees || []).filter(e => e.department === "Doctor").map(doc => (
+                                      <option key={doc.id} value={String(doc.id)}>{doc.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="dw-field">
+                                  <label>🃏 ካርድ ብር መሳፈያ</label>
+                                  <input type="number" placeholder="0.00" value={f.cardAmount ?? ""} onChange={ev => setDoctorField(emp.id, "cardAmount", ev.target.value)} />
+                                </div>
+                                <div className="dw-field">
+                                  <label>🔬 ላብራቶሪ ብር መሳፈያ</label>
+                                  <input type="number" placeholder="0.00" value={f.labAmount ?? ""} onChange={ev => setDoctorField(emp.id, "labAmount", ev.target.value)} />
+                                </div>
+                                <div className="dw-field">
+                                  <label>🩻 ኢሜጂንግ ብር መሳፈያ</label>
+                                  <input type="number" placeholder="0.00" value={f.imagingAmount ?? ""} onChange={ev => setDoctorField(emp.id, "imagingAmount", ev.target.value)} />
+                                </div>
+                                <div className="dw-field">
+                                  <label>💬 ኮንሰልቴሽን ብር መሳፈያ</label>
+                                  <input type="number" placeholder="0.00" value={f.consultationAmount ?? ""} onChange={ev => setDoctorField(emp.id, "consultationAmount", ev.target.value)} />
+                                </div>
+                                <div className="dw-field">
+                                  <label>🏥 ፕሮሲጀር ብር መሳፈያ</label>
+                                  <input type="number" placeholder="0.00" value={f.procedureAmount ?? ""} onChange={ev => setDoctorField(emp.id, "procedureAmount", ev.target.value)} />
+                                </div>
+                                <div className="dw-field">
+                                  <label>🔄 ራውንድ ብር መሳፈያ</label>
+                                  <input type="number" placeholder="0.00" value={f.roundAmount ?? ""} onChange={ev => setDoctorField(emp.id, "roundAmount", ev.target.value)} />
                                 </div>
                                 <div className="dw-field">
                                   <label>📈 ክፍያ መቶኛ (%)</label>
@@ -2873,7 +2911,7 @@ export default function App() {
                                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                 </div>
                                 <div className="dw-field">
-                                  <label>🧾 የሚቆጠር ምርት/አገልግሎት</label>
+                                  <label>🧾 የሚቆጠር አገልግሎት</label>
                                   <select
                                     value={f.basis || "all"}
                                     onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
@@ -2884,26 +2922,6 @@ export default function App() {
                                     ))}
                                   </select>
                                 </div>
-                                <div className="dw-field">
-                                  <label>🩻 ኢሜጂንግ ብዛት</label>
-                                  <input type="number" placeholder="0" value={f.imagingCount} onChange={ev => setDoctorField(emp.id, "imagingCount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>💵 የኢሜጂንግ ዋጋ (Birr)</label>
-                                  <input type="number" placeholder="0.00" value={f.imagingPrice} onChange={ev => setDoctorField(emp.id, "imagingPrice", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>⏰ ዲውቲ (Birr)</label>
-                                  <input type="number" placeholder="0.00" value={f.duty} onChange={ev => setDoctorField(emp.id, "duty", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>🏥 ፕሮሲጀር (Birr)</label>
-                                  <input type="number" placeholder="0.00" value={f.procedure} onChange={ev => setDoctorField(emp.id, "procedure", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>🔄 ራውንድ (Birr)</label>
-                                  <input type="number" placeholder="0.00" value={f.round} onChange={ev => setDoctorField(emp.id, "round", ev.target.value)} />
-                                </div>
                               </div>
 
                               {/* Live breakdown */}
@@ -2911,12 +2929,12 @@ export default function App() {
                                 <div className="dw-breakdown">
                                   <div className="dw-breakdown-title">📊 ዝርዝር ሂሳብ</div>
                                   <div className="dw-breakdown-grid">
-                                    {calc.card > 0 && <div className="dw-brow"><span>ካርድ ({f.cardCount} × {Number(f.cardPrice).toLocaleString()})</span><strong>{calc.card.toLocaleString()} Birr</strong></div>}
-                                    {calc.lab > 0 && <div className="dw-brow"><span>ላብራቶሪ</span><strong>{calc.lab.toLocaleString()} Birr</strong></div>}
-                                    {calc.imaging > 0 && <div className="dw-brow"><span>ኢሜጂንግ ({f.imagingCount} × {Number(f.imagingPrice).toLocaleString()})</span><strong>{calc.imaging.toLocaleString()} Birr</strong></div>}
-                                    {calc.duty > 0 && <div className="dw-brow"><span>ዲውቲ</span><strong>{calc.duty.toLocaleString()} Birr</strong></div>}
-                                    {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
-                                    {calc.round > 0 && <div className="dw-brow"><span>ራውንድ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
+                                    {calc.card > 0 && <div className="dw-brow"><span>ካርድ ብር መሳፈያ</span><strong>{calc.card.toLocaleString()} Birr</strong></div>}
+                                    {calc.lab > 0 && <div className="dw-brow"><span>ላብራቶሪ ብር መሳፈያ</span><strong>{calc.lab.toLocaleString()} Birr</strong></div>}
+                                    {calc.imaging > 0 && <div className="dw-brow"><span>ኢሜጂንግ ብር መሳፈያ</span><strong>{calc.imaging.toLocaleString()} Birr</strong></div>}
+                                    {calc.consultation > 0 && <div className="dw-brow"><span>ኮንሰልቴሽን ብር መሳፈያ</span><strong>{calc.consultation.toLocaleString()} Birr</strong></div>}
+                                    {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር ብር መሳፈያ</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
+                                    {calc.round > 0 && <div className="dw-brow"><span>ራውንድ ብር መሳፈያ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
                                     <div className="dw-brow dw-brow-total"><span>ጠቅላላ {DOCTOR_BASIS_LABELS[calc.basis] || "ገቢ"}</span><strong>{calc.selectedTotal.toLocaleString()} Birr</strong></div>
                                     <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
                                   </div>
@@ -2955,9 +2973,9 @@ export default function App() {
                                           <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ: {Number(h.total).toLocaleString()} Birr · ባንክ: {bank?.name || "—"}</div>
                                         </div>
                                         <div style={{ display: "flex", gap: 6 }}>
-                                          <button className="btn btn-sm" style={{ marginTop: 0, padding: "5px 14px", fontSize: 12, background: "#16a34a" }} onClick={() => approveDoctorWeekly(emp.id, h.id)}>✅ Approve</button>
-                                          <button className="btn-danger btn-sm" onClick={() => rejectDoctorWeekly(emp.id, h.id)}>❌ Reject</button>
-                                          <button className="btn-danger btn-sm" onClick={() => deleteDoctorWeeklyEntry(emp.id, h.id)}>🗑️</button>
+                                          <button className="btn btn-sm" style={{ marginTop: 0, padding: "5px 14px", fontSize: 12, background: "#16a34a" }} onClick={() => approveDoctorWeekly(h.doctorId || emp.id, h.id)}>✅ Approve</button>
+                                          <button className="btn-danger btn-sm" onClick={() => rejectDoctorWeekly(h.doctorId || emp.id, h.id)}>❌ Reject</button>
+                                          <button className="btn-danger btn-sm" onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button>
                                         </div>
                                       </div>
                                     );
@@ -2983,7 +3001,7 @@ export default function App() {
                                             <td style={{ fontWeight: 700 }}>{Number(h.total).toLocaleString()} Birr</td>
                                             <td style={{ color: "#16a34a", fontWeight: 700 }}>{Number(h.doctorCut).toLocaleString()} Birr</td>
                                             <td><span className={`status-badge ${h.status === "Approved" ? "approved" : "rejected"}`}>{h.status === "Approved" ? "✅ Approved" : "❌ Rejected"}</span></td>
-                                            <td><button className="btn-danger btn-sm" style={{ padding: "2px 6px", fontSize: 11 }} onClick={() => deleteDoctorWeeklyEntry(emp.id, h.id)}>🗑️</button></td>
+                                            <td><button className="btn-danger btn-sm" style={{ padding: "2px 6px", fontSize: 11 }} onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button></td>
                                           </tr>
                                         );
                                       })}
