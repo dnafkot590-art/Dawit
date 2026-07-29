@@ -173,11 +173,11 @@ body {
 
 .sidebar {
   background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
-  padding: 22px 18px;
+  padding: 18px 14px;
   color: white;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   box-shadow: 8px 0 24px rgba(2, 6, 23, 0.15);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -188,11 +188,11 @@ body {
 }
 
 .logout-btn {
-  margin-top: 10px;
+  margin-top: auto;
   border: none;
   background: #ef4444;
   color: white;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -235,19 +235,24 @@ body {
 
 .menu {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+}
+
+.menu.collapsed {
+  display: none;
 }
 
 .menu button {
   border: none;
   background: rgba(255, 255, 255, 0.06);
   color: white;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
   transition: 180ms ease;
   font-weight: 600;
+  font-size: 14px;
 }
 
 .menu button:hover {
@@ -1404,9 +1409,34 @@ td {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: #64748b;
+  color: #94a3b8;
   text-transform: uppercase;
-  padding: 4px 2px;
+  padding: 2px 2px 4px;
+}
+
+.sidebar-menu-toggle {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.dashboard-widget-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.empty-dashboard-card {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #64748b;
 }
 
 /* ============ Income Statement Report ============ */

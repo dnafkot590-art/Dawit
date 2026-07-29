@@ -168,6 +168,8 @@ export default function App() {
   const [reportTab, setReportTab] = useState("monthly");
   const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [menuExpanded, setMenuExpanded] = useState(true);
+  const [showDashboardCards, setShowDashboardCards] = useState(false);
 
   // Auth / portal
   const [loginForm, setLoginForm] = useState({ phoneNumber: "", password: "" });
@@ -2056,183 +2058,6 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* ---- DOCTOR WEEKLY CALCULATOR (Finance portal) ---- */}
-                    {financeTab === "payroll" && (db.employees || []).some(e => e.department === "Doctor") && (
-                      <div style={{ marginTop: 16, border: "2px solid #dbeafe", borderRadius: 14, padding: 20, background: "#f8fafc" }}>
-                        <h4 style={{ margin: "0 0 4px", fontSize: 16, color: "#1e3a5f" }}>🩺 የዶክተሮች ሳምንታዊ ክፍያ ሂሳብ</h4>
-                        <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 16px" }}>
-                          ለዶክተር ዲፓርትመንት ብቻ — ጠቅላላ ገቢ ላይ የሚሰጠው መቶኛ ከዚህ መስመር ላይ ተመርጧል።
-                        </p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                          {(db.employees || []).filter(e => e.department === "Doctor").map(emp => {
-                            const f = getDoctorForm(emp.id);
-                            const calc = calcDoctorWeekly(emp.id);
-                            const history = getDoctorWeeklyHistoryForEmp(emp.id);
-                            return (
-                              <div key={emp.id} className="doctor-weekly-card">
-                                <div className="doctor-weekly-header">
-                                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    {emp.photo
-                                      ? <img src={emp.photo} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />
-                                      : <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#dbeafe", display: "grid", placeItems: "center", fontSize: 18 }}>👨‍⚕️</div>
-                                    }
-                                    <div>
-                                      <div style={{ fontWeight: 700, fontSize: 15 }}>{emp.name}</div>
-                                      <div style={{ fontSize: 12, color: "#64748b" }}>Doctor · ደሞዝ: {emp.basicSalary.toLocaleString()} Birr</div>
-                                    </div>
-                                  </div>
-                                  {calc.total > 0 && (
-                                    <div style={{ textAlign: "right" }}>
-                                      <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ ገቢ</div>
-                                      <div style={{ fontWeight: 700, color: "#1d4ed8" }}>{calc.total.toLocaleString()} Birr</div>
-                                      <div style={{ fontSize: 11, color: "#16a34a" }}>→ {calc.percent}% = {calc.doctorCut.toLocaleString()} Birr</div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="doctor-weekly-grid">
-                                  <div className="dw-field">
-                                    <label>🃏 ካርድ</label>
-                                    <input type="number" placeholder="0.00" value={f.cardAmount ?? ""} onChange={ev => setDoctorField(emp.id, "cardAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🔬 ላብራቶሪ</label>
-                                    <input type="number" placeholder="0.00" value={f.labAmount ?? ""} onChange={ev => setDoctorField(emp.id, "labAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🩻 ኢሜጂንግ</label>
-                                    <input type="number" placeholder="0.00" value={f.imagingAmount ?? ""} onChange={ev => setDoctorField(emp.id, "imagingAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>💬 ኮንሰልቴሽን</label>
-                                    <input type="number" placeholder="0.00" value={f.consultationAmount ?? ""} onChange={ev => setDoctorField(emp.id, "consultationAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🏥 ፕሮሲጀር</label>
-                                    <input type="number" placeholder="0.00" value={f.procedureAmount ?? ""} onChange={ev => setDoctorField(emp.id, "procedureAmount", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🔄 ራውንድ</label>
-                                    <input type="number" placeholder="0.00" value={f.roundAmount ?? ""} onChange={ev => setDoctorField(emp.id, "roundAmount", ev.target.value)} />
-                                  </div>
-                                </div>
-
-                                <div className="doctor-weekly-options-grid">
-                                  <div className="dw-field dw-field-full">
-                                    <label>🧑‍⚕️ ዶክተር</label>
-                                    <select
-                                      value={f.doctorId || String(emp.id)}
-                                      onChange={ev => setDoctorField(emp.id, "doctorId", ev.target.value)}
-                                    >
-                                      {(db.employees || []).filter(e => e.department === "Doctor").map(doc => (
-                                        <option key={doc.id} value={String(doc.id)}>{doc.name}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>📈 መቶኛ (%)</label>
-                                    <input type="number" min="0" step="0.1" placeholder="15" value={f.percentage ?? "15"} onChange={ev => setDoctorField(emp.id, "percentage", ev.target.value)} />
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🧾 አገልግሎት</label>
-                                    <select
-                                      value={f.basis || "all"}
-                                      onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
-                                    >
-                                      {Object.entries(DOCTOR_BASIS_LABELS).map(([value, label]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="dw-field">
-                                    <label>🏦 ባንክ</label>
-                                    <select
-                                      value={f.bankId}
-                                      onChange={ev => setDoctorField(emp.id, "bankId", ev.target.value)}
-                                    >
-                                      <option value="">— ባንክ ምረጥ —</option>
-                                      {(db.bankAccounts || []).map(b => (
-                                        <option key={b.id} value={b.id}>{b.name} ({b.accountNumber})</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-
-                                {calc.total > 0 && (
-                                  <div className="dw-breakdown">
-                                    <div className="dw-breakdown-title">📊 ዝርዝር ሂሳብ</div>
-                                    <div className="dw-breakdown-grid">
-                                      {calc.card > 0 && <div className="dw-brow"><span>ካርድ ብር መሳፈያ</span><strong>{calc.card.toLocaleString()} Birr</strong></div>}
-                                      {calc.lab > 0 && <div className="dw-brow"><span>ላብራቶሪ ብር መሳፈያ</span><strong>{calc.lab.toLocaleString()} Birr</strong></div>}
-                                      {calc.imaging > 0 && <div className="dw-brow"><span>ኢሜጂንግ ብር መሳፈያ</span><strong>{calc.imaging.toLocaleString()} Birr</strong></div>}
-                                      {calc.consultation > 0 && <div className="dw-brow"><span>ኮንሰልቴሽን ብር መሳፈያ</span><strong>{calc.consultation.toLocaleString()} Birr</strong></div>}
-                                      {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር ብር መሳፈያ</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
-                                      {calc.round > 0 && <div className="dw-brow"><span>ራውንድ ብር መሳፈያ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
-                                      <div className="dw-brow dw-brow-total"><span>ጠቅላላ {DOCTOR_BASIS_LABELS[calc.basis] || "ገቢ"}</span><strong>{calc.selectedTotal.toLocaleString()} Birr</strong></div>
-                                      <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                <button className="btn" style={{ marginTop: 8, width: "100%" }} onClick={() => saveDoctorWeekly(emp)}>
-                                  📤 ሳምንታዊ ክፍያ ለ Admin ላክ
-                                </button>
-
-                                {/* Pending approvals for this doctor */}
-                                {history.filter(h => h.status === "Pending").length > 0 && (
-                                  <div style={{ marginTop: 14, padding: "12px 14px", background: "#fef3c7", borderRadius: 10, border: "1px solid #fde68a" }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>⏳ Pending ክፍያዎች — Approve ያድርጉ</div>
-                                    {history.filter(h => h.status === "Pending").map(h => {
-                                      const bank = (db.bankAccounts || []).find(b => b.id === Number(h.bankId));
-                                      return (
-                                        <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
-                                          <div>
-                                            <div style={{ fontWeight: 700, fontSize: 14 }}>{h.date} — {Number(h.doctorCut).toLocaleString()} Birr ({Number(h.percentage || 15)}%)</div>
-                                            <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ: {Number(h.total).toLocaleString()} Birr · ባንክ: {bank?.name || "—"}</div>
-                                          </div>
-                                          <div style={{ display: "flex", gap: 6 }}>
-                                            <button className="btn btn-sm" style={{ marginTop: 0, padding: "5px 14px", fontSize: 12, background: "#16a34a" }} onClick={() => approveDoctorWeekly(h.doctorId || emp.id, h.id)}>✅ Approve</button>
-                                            <button className="btn-danger btn-sm" onClick={() => rejectDoctorWeekly(h.doctorId || emp.id, h.id)}>❌ Reject</button>
-                                            <button className="btn-danger btn-sm" onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {history.filter(h => h.status !== "Pending").length > 0 && (
-                                  <div style={{ marginTop: 14 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: 6 }}>📋 የቀደሙ ሳምንታዊ ክፍያዎች</div>
-                                    <table className="report-table" style={{ fontSize: 13 }}>
-                                      <thead>
-                                        <tr><th>ቀን</th><th>ባንክ</th><th>ጠቅላላ</th><th style={{ color: "#16a34a" }}>15% ክፍያ</th><th>ሁኔታ</th><th></th></tr>
-                                      </thead>
-                                      <tbody>
-                                        {history.filter(h => h.status !== "Pending").map(h => {
-                                          const bank = (db.bankAccounts || []).find(b => b.id === Number(h.bankId));
-                                          return (
-                                            <tr key={h.id}>
-                                              <td>{h.date}</td>
-                                              <td>{bank?.name || "—"}</td>
-                                              <td style={{ fontWeight: 700 }}>{Number(h.total).toLocaleString()} Birr</td>
-                                              <td style={{ color: "#16a34a", fontWeight: 700 }}>{Number(h.doctorCut).toLocaleString()} Birr</td>
-                                              <td><span className={`status-badge ${h.status === "Approved" ? "approved" : "rejected"}`}>{h.status === "Approved" ? "✅ Approved" : "❌ Rejected"}</span></td>
-                                              <td><button className="btn-danger btn-sm" style={{ padding: "2px 6px", fontSize: 11 }} onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button></td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
                     {/* HRM tab — inside Finance portal */}
                     {financeTab === "hrm" && (
                       <div>
@@ -2453,12 +2278,14 @@ export default function App() {
       <div className="finance-dashboard">
         {/* SIDEBAR */}
         <aside className="sidebar">
-          {/* Mobile top bar — visible only on small screens */}
           <div className="sidebar-mobile-top">
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {db.organizationLogo && <img className="brand-logo" src={db.organizationLogo} alt="logo" style={{ width: 36, height: 36 }} />}
-              <span className="brand" style={{ fontSize: 15 }}>{db.organizationLogoText || db.organizationName}</span>
-            </div>
+            <button
+              className="sidebar-menu-toggle"
+              onClick={() => setMenuExpanded(p => !p)}
+              aria-label="Toggle menu"
+            >
+              ☰ Menu
+            </button>
             <button
               className="hamburger-btn"
               onClick={() => setSidebarOpen(p => !p)}
@@ -2468,20 +2295,10 @@ export default function App() {
             </button>
           </div>
 
-          {/* Desktop brand */}
-          <div className="brand-wrap brand-wrap-desktop">
-            {db.organizationLogo && <img className="brand-logo" src={db.organizationLogo} alt="logo" />}
-            <div className="brand">{db.organizationLogoText || db.organizationName}</div>
-          </div>
-          <div className="sidebar-upload">
-            <label className="sidebar-upload-label" htmlFor="sl">Upload Logo</label>
-            <input id="sl" className="sidebar-upload-input" type="file" accept="image/*" onChange={handleLogoUpload} />
-          </div>
-          <nav className={`menu${sidebarOpen ? " mobile-open" : ""}`}>
-            {/* ---- Admin section ---- */}
+          <nav className={`menu${(menuExpanded || sidebarOpen) ? " mobile-open" : " collapsed"}`}>
             <div className="menu-group-label">ADMIN</div>
             {ADMIN_ITEMS.map((item, i) => (
-              <button key={item} className={section === item ? "active" : ""} onClick={() => { setSection(item); setSidebarOpen(false); if (item === "Messages") markAdminMsgsRead(); }}>
+              <button key={item} className={section === item ? "active" : ""} onClick={() => { setSection(item); setSidebarOpen(false); setMenuExpanded(true); if (item === "Messages") markAdminMsgsRead(); }}>
                 {(ADMIN_LABELS[lang] || ADMIN_LABELS.en)[i]}
                 {item === "Messages" && unreadAdmin > 0 && <span className="badge">{unreadAdmin}</span>}
                 {item === "Approve Expenses" && pendingExpenses.length > 0 && <span className="badge">{pendingExpenses.length}</span>}
@@ -2509,51 +2326,68 @@ export default function App() {
           {/* ===== DASHBOARD ===== */}
           {section === "Dashboard" && (
             <>
-              {/* Summary cards */}
-              <section className="summary-grid">
-                <div className="card"><h3>Annual Income</h3><p className="metric">{yearly.totalIncome.toLocaleString()} Birr</p></div>
-                <div className="card"><h3>Annual Expense</h3><p className="metric">{yearly.totalExpense.toLocaleString()} Birr</p></div>
-                <div className="card"><h3>Net Profit</h3><p className="metric" style={{ color: yearly.netProfit >= 0 ? "#16a34a" : "#ef4444" }}>{yearly.netProfit.toLocaleString()} Birr</p></div>
-                <div className="card"><h3>Unpaid Debt</h3><p className="metric">{yearly.remainingDebt.toLocaleString()} Birr</p></div>
-              </section>
+              <div className="dashboard-widget-actions">
+                <button className="secondary-btn" onClick={() => setShowDashboardCards(p => !p)}>
+                  {showDashboardCards ? "Hide Dashboard Boxes" : "Show Dashboard Boxes"}
+                </button>
+              </div>
 
-              {/* Monthly summary cards */}
-              <section className="summary-grid" style={{ marginTop: 16 }}>
-                <div className="card" style={{ borderTop: "3px solid #2563eb" }}><h3>📅 This Month Income</h3><p className="metric" style={{ fontSize: 20, color: "#2563eb" }}>{monthly.monthIncome.toLocaleString()} Birr</p></div>
-                <div className="card" style={{ borderTop: "3px solid #ef4444" }}><h3>📅 This Month Expense</h3><p className="metric" style={{ fontSize: 20, color: "#ef4444" }}>{monthly.monthExpense.toLocaleString()} Birr</p></div>
-                <div className="card" style={{ borderTop: "3px solid #16a34a" }}><h3>📅 Monthly Profit</h3><p className="metric" style={{ fontSize: 20, color: monthly.remainingProfit >= 0 ? "#16a34a" : "#ef4444" }}>{monthly.remainingProfit.toLocaleString()} Birr</p></div>
-                <div className="card" style={{ borderTop: "3px solid #f59e0b" }}><h3>📅 This Month Debt</h3><p className="metric" style={{ fontSize: 20, color: "#f59e0b" }}>{monthly.monthDebt.toLocaleString()} Birr</p></div>
-              </section>
+              {!showDashboardCards && (
+                <div className="card empty-dashboard-card">
+                  <h3>Dashboard boxes are hidden</h3>
+                  <p>Use the button above to show the dashboard widgets when needed.</p>
+                </div>
+              )}
 
-              {/* HRM quick stats */}
-              <section className="summary-grid" style={{ marginTop: 16 }}>
-                <div className="card">
-                  <h3>👥 Total Employees</h3>
-                  <p className="metric">{(db.employees || []).length}</p>
-                </div>
-                <div className="card">
-                  <h3>🏢 Departments</h3>
-                  <p className="metric">{deptStats.length}</p>
-                </div>
-                <div className="card">
-                  <h3>🗓️ Pending Leave</h3>
-                  <p className="metric">{pendingLeave}</p>
-                </div>
-                <div className="card">
-                  <h3>💬 Unread Messages</h3>
-                  <p className="metric">{unreadAdmin}</p>
-                </div>
-              </section>
+              {showDashboardCards && (
+                <>
+                  {/* Summary cards */}
+                  <section className="summary-grid">
+                    <div className="card"><h3>Annual Income</h3><p className="metric">{yearly.totalIncome.toLocaleString()} Birr</p></div>
+                    <div className="card"><h3>Annual Expense</h3><p className="metric">{yearly.totalExpense.toLocaleString()} Birr</p></div>
+                    <div className="card"><h3>Net Profit</h3><p className="metric" style={{ color: yearly.netProfit >= 0 ? "#16a34a" : "#ef4444" }}>{yearly.netProfit.toLocaleString()} Birr</p></div>
+                    <div className="card"><h3>Unpaid Debt</h3><p className="metric">{yearly.remainingDebt.toLocaleString()} Birr</p></div>
+                  </section>
 
-              {/* Bank balances */}
-              <section className="bank-summary-grid">
-                {bankSummaries.map(b => (
-                  <div key={b.id} className="card bank-card">
-                    <div className="bank-info"><h4>{b.name}</h4><span className="acc-num">{b.accountNumber}</span></div>
-                    <p className="bank-balance">{b.balance.toLocaleString()} Birr</p>
-                  </div>
-                ))}
-              </section>
+                  {/* Monthly summary cards */}
+                  <section className="summary-grid" style={{ marginTop: 16 }}>
+                    <div className="card" style={{ borderTop: "3px solid #2563eb" }}><h3>📅 This Month Income</h3><p className="metric" style={{ fontSize: 20, color: "#2563eb" }}>{monthly.monthIncome.toLocaleString()} Birr</p></div>
+                    <div className="card" style={{ borderTop: "3px solid #ef4444" }}><h3>📅 This Month Expense</h3><p className="metric" style={{ fontSize: 20, color: "#ef4444" }}>{monthly.monthExpense.toLocaleString()} Birr</p></div>
+                    <div className="card" style={{ borderTop: "3px solid #16a34a" }}><h3>📅 Monthly Profit</h3><p className="metric" style={{ fontSize: 20, color: monthly.remainingProfit >= 0 ? "#16a34a" : "#ef4444" }}>{monthly.remainingProfit.toLocaleString()} Birr</p></div>
+                    <div className="card" style={{ borderTop: "3px solid #f59e0b" }}><h3>📅 This Month Debt</h3><p className="metric" style={{ fontSize: 20, color: "#f59e0b" }}>{monthly.monthDebt.toLocaleString()} Birr</p></div>
+                  </section>
+
+                  {/* HRM quick stats */}
+                  <section className="summary-grid" style={{ marginTop: 16 }}>
+                    <div className="card">
+                      <h3>👥 Total Employees</h3>
+                      <p className="metric">{(db.employees || []).length}</p>
+                    </div>
+                    <div className="card">
+                      <h3>🏢 Departments</h3>
+                      <p className="metric">{deptStats.length}</p>
+                    </div>
+                    <div className="card">
+                      <h3>🗓️ Pending Leave</h3>
+                      <p className="metric">{pendingLeave}</p>
+                    </div>
+                    <div className="card">
+                      <h3>💬 Unread Messages</h3>
+                      <p className="metric">{unreadAdmin}</p>
+                    </div>
+                  </section>
+
+                  {/* Bank balances */}
+                  <section className="bank-summary-grid">
+                    {bankSummaries.map(b => (
+                      <div key={b.id} className="card bank-card">
+                        <div className="bank-info"><h4>{b.name}</h4><span className="acc-num">{b.accountNumber}</span></div>
+                        <p className="bank-balance">{b.balance.toLocaleString()} Birr</p>
+                      </div>
+                    ))}
+                  </section>
+                </>
+              )}
 
               {/* Department bar chart */}
               {deptStats.length > 0 && (
@@ -2830,188 +2664,6 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* ---- DOCTOR WEEKLY REVENUE CALCULATOR ---- */}
-                  {(db.employees || []).some(e => e.department === "Doctor") && (
-                    <div className="card" style={{ marginTop: 4 }}>
-                      <h3>🩺 የዶክተሮች ሳምንታዊ ክፍያ ሂሳብ</h3>
-                      <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 16px" }}>
-                        ለዶክተር ዲፓርትመንት ብቻ — ጠቅላላ ገቢ ላይ የሚሰጠው መቶኛ ከዚህ መስመር ላይ ተመርጧል።
-                      </p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                        {(db.employees || []).filter(e => e.department === "Doctor").map(emp => {
-                          const f = getDoctorForm(emp.id);
-                          const calc = calcDoctorWeekly(emp.id);
-                          const history = (doctorWeeklyHistory[String(emp.id)] || []);
-                          return (
-                            <div key={emp.id} className="doctor-weekly-card">
-                              <div className="doctor-weekly-header">
-                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                  {emp.photo
-                                    ? <img src={emp.photo} alt="" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />
-                                    : <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#dbeafe", display: "grid", placeItems: "center", fontSize: 18 }}>👨‍⚕️</div>
-                                  }
-                                  <div>
-                                    <div style={{ fontWeight: 700, fontSize: 15 }}>{emp.name}</div>
-                                    <div style={{ fontSize: 12, color: "#64748b" }}>Doctor · ደሞዝ: {emp.basicSalary.toLocaleString()} Birr</div>
-                                  </div>
-                                </div>
-                                {calc.total > 0 && (
-                                  <div style={{ textAlign: "right" }}>
-                                    <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ ገቢ</div>
-                                    <div style={{ fontWeight: 700, color: "#1d4ed8" }}>{calc.total.toLocaleString()} Birr</div>
-                                    <div style={{ fontSize: 11, color: "#16a34a" }}>→ {calc.percent}% = {calc.doctorCut.toLocaleString()} Birr</div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Input grid */}
-                              <div className="doctor-weekly-grid">
-                                <div className="dw-field dw-field-full">
-                                  <label>🧑‍⚕️ ዶክተር ስም</label>
-                                  <select
-                                    value={f.doctorId || String(emp.id)}
-                                    onChange={ev => setDoctorField(emp.id, "doctorId", ev.target.value)}
-                                    style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
-                                  >
-                                    {(db.employees || []).filter(e => e.department === "Doctor").map(doc => (
-                                      <option key={doc.id} value={String(doc.id)}>{doc.name}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className="dw-field">
-                                  <label>🃏 ካርድ ብር መሳፈያ</label>
-                                  <input type="number" placeholder="0.00" value={f.cardAmount ?? ""} onChange={ev => setDoctorField(emp.id, "cardAmount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>🔬 ላብራቶሪ ብር መሳፈያ</label>
-                                  <input type="number" placeholder="0.00" value={f.labAmount ?? ""} onChange={ev => setDoctorField(emp.id, "labAmount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>🩻 ኢሜጂንግ ብር መሳፈያ</label>
-                                  <input type="number" placeholder="0.00" value={f.imagingAmount ?? ""} onChange={ev => setDoctorField(emp.id, "imagingAmount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>💬 ኮንሰልቴሽን ብር መሳፈያ</label>
-                                  <input type="number" placeholder="0.00" value={f.consultationAmount ?? ""} onChange={ev => setDoctorField(emp.id, "consultationAmount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>🏥 ፕሮሲጀር ብር መሳፈያ</label>
-                                  <input type="number" placeholder="0.00" value={f.procedureAmount ?? ""} onChange={ev => setDoctorField(emp.id, "procedureAmount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>🔄 ራውንድ ብር መሳፈያ</label>
-                                  <input type="number" placeholder="0.00" value={f.roundAmount ?? ""} onChange={ev => setDoctorField(emp.id, "roundAmount", ev.target.value)} />
-                                </div>
-                                <div className="dw-field">
-                                  <label>📈 ክፍያ መቶኛ (%)</label>
-                                  <input type="number" min="0" step="0.1" placeholder="15" value={f.percentage ?? "15"} onChange={ev => setDoctorField(emp.id, "percentage", ev.target.value)} />
-                                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
-                                </div>
-                                <div className="dw-field">
-                                  <label>🧾 የሚቆጠር አገልግሎት</label>
-                                  <select
-                                    value={f.basis || "all"}
-                                    onChange={ev => setDoctorField(emp.id, "basis", ev.target.value)}
-                                    style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
-                                  >
-                                    {Object.entries(DOCTOR_BASIS_LABELS).map(([value, label]) => (
-                                      <option key={value} value={value}>{label}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
-
-                              {/* Live breakdown */}
-                              {calc.total > 0 && (
-                                <div className="dw-breakdown">
-                                  <div className="dw-breakdown-title">📊 ዝርዝር ሂሳብ</div>
-                                  <div className="dw-breakdown-grid">
-                                    {calc.card > 0 && <div className="dw-brow"><span>ካርድ ብር መሳፈያ</span><strong>{calc.card.toLocaleString()} Birr</strong></div>}
-                                    {calc.lab > 0 && <div className="dw-brow"><span>ላብራቶሪ ብር መሳፈያ</span><strong>{calc.lab.toLocaleString()} Birr</strong></div>}
-                                    {calc.imaging > 0 && <div className="dw-brow"><span>ኢሜጂንግ ብር መሳፈያ</span><strong>{calc.imaging.toLocaleString()} Birr</strong></div>}
-                                    {calc.consultation > 0 && <div className="dw-brow"><span>ኮንሰልቴሽን ብር መሳፈያ</span><strong>{calc.consultation.toLocaleString()} Birr</strong></div>}
-                                    {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር ብር መሳፈያ</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
-                                    {calc.round > 0 && <div className="dw-brow"><span>ራውንድ ብር መሳፈያ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
-                                    <div className="dw-brow dw-brow-total"><span>ጠቅላላ {DOCTOR_BASIS_LABELS[calc.basis] || "ገቢ"}</span><strong>{calc.selectedTotal.toLocaleString()} Birr</strong></div>
-                                    <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Bank selector */}
-                              <div className="dw-field" style={{ marginTop: 10 }}>
-                                <label>🏦 ክፍያ የሚከፈልበት / የሚቆረጥበት ባንክ</label>
-                                <select
-                                  value={f.bankId}
-                                  onChange={ev => setDoctorField(emp.id, "bankId", ev.target.value)}
-                                  style={{ padding: "9px 12px", border: "1.5px solid #cbd5e1", borderRadius: 8, fontSize: 14, background: "#f8fafc" }}
-                                >
-                                  <option value="">— ባንክ ምረጥ —</option>
-                                  {(db.bankAccounts || []).map(b => (
-                                    <option key={b.id} value={b.id}>{b.name} ({b.accountNumber})</option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <button className="btn" style={{ marginTop: 8, width: "100%" }} onClick={() => saveDoctorWeekly(emp)}>
-                                📤 ሳምንታዊ ክፍያ ለ Admin ላክ
-                              </button>
-
-                              {/* Pending approvals */}
-                              {history.filter(h => h.status === "Pending").length > 0 && (
-                                <div style={{ marginTop: 14, padding: "12px 14px", background: "#fef3c7", borderRadius: 10, border: "1px solid #fde68a" }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>⏳ Pending ክፍያዎች — Approve ያድርጉ</div>
-                                  {history.filter(h => h.status === "Pending").map(h => {
-                                    const bank = (db.bankAccounts || []).find(b => b.id === Number(h.bankId));
-                                    return (
-                                      <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
-                                        <div>
-                                          <div style={{ fontWeight: 700, fontSize: 14 }}>{h.date} — {Number(h.doctorCut).toLocaleString()} Birr ({Number(h.percentage || 15)}%)</div>
-                                          <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ: {Number(h.total).toLocaleString()} Birr · ባንክ: {bank?.name || "—"}</div>
-                                        </div>
-                                        <div style={{ display: "flex", gap: 6 }}>
-                                          <button className="btn btn-sm" style={{ marginTop: 0, padding: "5px 14px", fontSize: 12, background: "#16a34a" }} onClick={() => approveDoctorWeekly(h.doctorId || emp.id, h.id)}>✅ Approve</button>
-                                          <button className="btn-danger btn-sm" onClick={() => rejectDoctorWeekly(h.doctorId || emp.id, h.id)}>❌ Reject</button>
-                                          <button className="btn-danger btn-sm" onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {/* History — non-pending */}
-                              {history.filter(h => h.status !== "Pending").length > 0 && (
-                                <div style={{ marginTop: 14 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: 6 }}>📋 የቀደሙ ሳምንታዊ ክፍያዎች</div>
-                                  <table className="report-table" style={{ fontSize: 13 }}>
-                                    <thead>
-                                      <tr><th>ቀን</th><th>ባንክ</th><th>ጠቅላላ</th><th style={{ color: "#16a34a" }}>15% ክፍያ</th><th>ሁኔታ</th><th></th></tr>
-                                    </thead>
-                                    <tbody>
-                                      {history.filter(h => h.status !== "Pending").map(h => {
-                                        const bank = (db.bankAccounts || []).find(b => b.id === Number(h.bankId));
-                                        return (
-                                          <tr key={h.id}>
-                                            <td>{h.date}</td>
-                                            <td>{bank?.name || "—"}</td>
-                                            <td style={{ fontWeight: 700 }}>{Number(h.total).toLocaleString()} Birr</td>
-                                            <td style={{ color: "#16a34a", fontWeight: 700 }}>{Number(h.doctorCut).toLocaleString()} Birr</td>
-                                            <td><span className={`status-badge ${h.status === "Approved" ? "approved" : "rejected"}`}>{h.status === "Approved" ? "✅ Approved" : "❌ Rejected"}</span></td>
-                                            <td><button className="btn-danger btn-sm" style={{ padding: "2px 6px", fontSize: 11 }} onClick={() => deleteDoctorWeeklyEntry(h.doctorId || emp.id, h.id)}>🗑️</button></td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
