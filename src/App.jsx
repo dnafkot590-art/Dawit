@@ -549,7 +549,7 @@ export default function App() {
   };
 
   // ---- Doctor weekly revenue calculator ----
-  const getDoctorForm = (empId) => doctorWeeklyForm[String(empId)] || { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "" };
+  const getDoctorForm = (empId) => doctorWeeklyForm[String(empId)] || { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15" };
 
   const setDoctorField = (empId, field, val) => {
     setDoctorWeeklyForm(p => ({ ...p, [String(empId)]: { ...getDoctorForm(empId), [field]: val } }));
@@ -564,8 +564,9 @@ export default function App() {
     const procedure = Number(f.procedure) || 0;
     const round = Number(f.round) || 0;
     const total = card + lab + imaging + duty + procedure + round;
-    const doctorCut = Math.round(total * 0.15 * 100) / 100;
-    return { card, lab, imaging, duty, procedure, round, total, doctorCut };
+    const percent = Number.isFinite(Number(f.percentage)) && Number(f.percentage) > 0 ? Number(f.percentage) : 15;
+    const doctorCut = Math.round(total * (percent / 100) * 100) / 100;
+    return { card, lab, imaging, duty, procedure, round, total, percent, doctorCut };
   };
 
   const saveDoctorWeekly = (emp) => {
@@ -582,6 +583,7 @@ export default function App() {
       imagingCount: f.imagingCount, imagingPrice: f.imagingPrice,
       duty: f.duty, procedure: f.procedure, round: f.round,
       bankId: f.bankId,
+      percentage: f.percentage || "15",
       status: "Pending",
       ...calc,
     };
@@ -590,8 +592,8 @@ export default function App() {
       ...p,
       [key]: [entry, ...(p[key] || [])].slice(0, 20),
     }));
-    setDoctorWeeklyForm(p => ({ ...p, [String(emp.id)]: { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "" } }));
-    showToast("success", `${emp.name} — ${calc.doctorCut.toLocaleString()} Birr (15%) ቀርቧል። Admin approval ይጠብቁ።`);
+    setDoctorWeeklyForm(p => ({ ...p, [String(emp.id)]: { cardCount: "", cardPrice: "", labTotal: "", imagingCount: "", imagingPrice: "", duty: "", procedure: "", round: "", bankId: "", percentage: "15" } }));
+    showToast("success", `${emp.name} — ${calc.doctorCut.toLocaleString()} Birr (${calc.percent}%) ቀርቧል። Admin approval ይጠብቁ።`);
   };
 
   const deleteDoctorWeeklyEntry = (empId, entryId) => {
@@ -1477,7 +1479,7 @@ export default function App() {
                               )}
                             </div>
                             <div style={{ padding: "18px 20px", borderRadius: 14, background: "#0f172a", border: "2px solid #4ade80", textAlign: "center" }}>
-                              <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginBottom: 6 }}>💰 15% — የእርስዎ ክፍያ</div>
+                              <div style={{ fontSize: 12, color: "#4ade80", fontWeight: 700, marginBottom: 6 }}>💰 {lastEntry ? `${Number(lastEntry.percentage || 15)}%` : "15%"} — የእርስዎ ክፍያ</div>
                               <div style={{ fontSize: 28, fontWeight: 800, color: "#4ade80" }}>
                                 {lastEntry ? Number(lastEntry.doctorCut).toLocaleString() : "—"}
                               </div>
@@ -1499,7 +1501,7 @@ export default function App() {
                                   <tr>
                                     <th>ቀን</th>
                                     <th style={{ textAlign: "right" }}>ጠቅላላ ገቢ</th>
-                                    <th style={{ textAlign: "right", color: "#16a34a" }}>15% ክፍያ</th>
+                                    <th style={{ textAlign: "right", color: "#16a34a" }}>ክፍያ መቶኛ</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2024,7 +2026,7 @@ export default function App() {
                       <div style={{ marginTop: 16, border: "2px solid #dbeafe", borderRadius: 14, padding: 20, background: "#f8fafc" }}>
                         <h4 style={{ margin: "0 0 4px", fontSize: 16, color: "#1e3a5f" }}>🩺 የዶክተሮች ሳምንታዊ ክፍያ ሂሳብ</h4>
                         <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 16px" }}>
-                          ለዶክተር ዲፓርትመንት ብቻ — ጠቅላላ ገቢ ካሰሉ <strong>15%</strong> ለዶክተሩ ይሰጣል።
+                          ለዶክተር ዲፓርትመንት ብቻ — ጠቅላላ ገቢ ላይ የሚሰጠው መቶኛ ከዚህ መስመር ላይ ተመርጧል።
                         </p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                           {(db.employees || []).filter(e => e.department === "Doctor").map(emp => {
@@ -2048,7 +2050,7 @@ export default function App() {
                                     <div style={{ textAlign: "right" }}>
                                       <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ ገቢ</div>
                                       <div style={{ fontWeight: 700, color: "#1d4ed8" }}>{calc.total.toLocaleString()} Birr</div>
-                                      <div style={{ fontSize: 11, color: "#16a34a" }}>→ 15% = {calc.doctorCut.toLocaleString()} Birr</div>
+                                      <div style={{ fontSize: 11, color: "#16a34a" }}>→ {calc.percent}% = {calc.doctorCut.toLocaleString()} Birr</div>
                                     </div>
                                   )}
                                 </div>
@@ -2065,6 +2067,11 @@ export default function App() {
                                   <div className="dw-field dw-field-full">
                                     <label>🔬 ላብራቶሪ አጠቃላይ ብር</label>
                                     <input type="number" placeholder="0.00" value={f.labTotal} onChange={ev => setDoctorField(emp.id, "labTotal", ev.target.value)} />
+                                  </div>
+                                  <div className="dw-field">
+                                    <label>📈 ክፍያ መቶኛ (%)</label>
+                                    <input type="number" min="0" step="0.1" placeholder="15" value={f.percentage ?? "15"} onChange={ev => setDoctorField(emp.id, "percentage", ev.target.value)} />
+                                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                   </div>
                                   <div className="dw-field">
                                     <label>🩻 ኢሜጂንግ ብዛት</label>
@@ -2099,7 +2106,7 @@ export default function App() {
                                       {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
                                       {calc.round > 0 && <div className="dw-brow"><span>ራውንድ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
                                       <div className="dw-brow dw-brow-total"><span>ጠቅላላ ገቢ</span><strong>{calc.total.toLocaleString()} Birr</strong></div>
-                                      <div className="dw-brow dw-brow-result"><span>15% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
+                                      <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
                                     </div>
                                   </div>
                                 )}
@@ -2132,7 +2139,7 @@ export default function App() {
                                       return (
                                         <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
                                           <div>
-                                            <div style={{ fontWeight: 700, fontSize: 14 }}>{h.date} — {Number(h.doctorCut).toLocaleString()} Birr (15%)</div>
+                                            <div style={{ fontWeight: 700, fontSize: 14 }}>{h.date} — {Number(h.doctorCut).toLocaleString()} Birr ({Number(h.percentage || 15)}%)</div>
                                             <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ: {Number(h.total).toLocaleString()} Birr · ባንክ: {bank?.name || "—"}</div>
                                           </div>
                                           <div style={{ display: "flex", gap: 6 }}>
@@ -2780,7 +2787,7 @@ export default function App() {
                     <div className="card" style={{ marginTop: 4 }}>
                       <h3>🩺 የዶክተሮች ሳምንታዊ ክፍያ ሂሳብ</h3>
                       <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 16px" }}>
-                        ለዶክተር ዲፓርትመንት ብቻ — ጠቅላላ ገቢ ካሰሉ <strong>15%</strong> ለዶክተሩ ይሰጣል።
+                        ለዶክተር ዲፓርትመንት ብቻ — ጠቅላላ ገቢ ላይ የሚሰጠው መቶኛ ከዚህ መስመር ላይ ተመርጧል።
                       </p>
                       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                         {(db.employees || []).filter(e => e.department === "Doctor").map(emp => {
@@ -2804,7 +2811,7 @@ export default function App() {
                                   <div style={{ textAlign: "right" }}>
                                     <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ ገቢ</div>
                                     <div style={{ fontWeight: 700, color: "#1d4ed8" }}>{calc.total.toLocaleString()} Birr</div>
-                                    <div style={{ fontSize: 11, color: "#16a34a" }}>→ 15% = {calc.doctorCut.toLocaleString()} Birr</div>
+                                    <div style={{ fontSize: 11, color: "#16a34a" }}>→ {calc.percent}% = {calc.doctorCut.toLocaleString()} Birr</div>
                                   </div>
                                 )}
                               </div>
@@ -2822,6 +2829,11 @@ export default function App() {
                                 <div className="dw-field dw-field-full">
                                   <label>🔬 ላብራቶሪ አጠቃላይ ብር</label>
                                   <input type="number" placeholder="0.00" value={f.labTotal} onChange={ev => setDoctorField(emp.id, "labTotal", ev.target.value)} />
+                                </div>
+                                <div className="dw-field">
+                                  <label>📈 ክፍያ መቶኛ (%)</label>
+                                  <input type="number" min="0" step="0.1" placeholder="15" value={f.percentage ?? "15"} onChange={ev => setDoctorField(emp.id, "percentage", ev.target.value)} />
+                                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>15% ከላይ ወይም ከታች ተመርጠው ሊጠቀሙ ይችላሉ</div>
                                 </div>
                                 <div className="dw-field">
                                   <label>🩻 ኢሜጂንግ ብዛት</label>
@@ -2857,7 +2869,7 @@ export default function App() {
                                     {calc.procedure > 0 && <div className="dw-brow"><span>ፕሮሲጀር</span><strong>{calc.procedure.toLocaleString()} Birr</strong></div>}
                                     {calc.round > 0 && <div className="dw-brow"><span>ራውንድ</span><strong>{calc.round.toLocaleString()} Birr</strong></div>}
                                     <div className="dw-brow dw-brow-total"><span>ጠቅላላ ገቢ</span><strong>{calc.total.toLocaleString()} Birr</strong></div>
-                                    <div className="dw-brow dw-brow-result"><span>15% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
+                                    <div className="dw-brow dw-brow-result"><span>{calc.percent}% — {emp.name} ክፍያ</span><strong>{calc.doctorCut.toLocaleString()} Birr</strong></div>
                                   </div>
                                 </div>
                               )}
@@ -2890,7 +2902,7 @@ export default function App() {
                                     return (
                                       <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #fde68a", flexWrap: "wrap", gap: 8 }}>
                                         <div>
-                                          <div style={{ fontWeight: 700, fontSize: 14 }}>{h.date} — {Number(h.doctorCut).toLocaleString()} Birr (15%)</div>
+                                          <div style={{ fontWeight: 700, fontSize: 14 }}>{h.date} — {Number(h.doctorCut).toLocaleString()} Birr ({Number(h.percentage || 15)}%)</div>
                                           <div style={{ fontSize: 12, color: "#64748b" }}>ጠቅላላ: {Number(h.total).toLocaleString()} Birr · ባንክ: {bank?.name || "—"}</div>
                                         </div>
                                         <div style={{ display: "flex", gap: 6 }}>
