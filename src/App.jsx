@@ -2278,11 +2278,33 @@ export default function App() {
       <div className="finance-dashboard">
         {/* SIDEBAR */}
         <aside className="sidebar">
-          <div className="brand-wrap" style={{ marginBottom: 8 }}>
-            <div className="brand-logo" style={{ display: "grid", placeItems: "center", fontSize: 18 }}>🏥</div>
-            <div className="brand" style={{ fontSize: 16, lineHeight: 1.2 }}>
-              {(db.organizationLogoText || db.organizationName || "Dr Hibist").toString().slice(0, 24)}
+          <div className="sidebar-brand-card">
+            <div className="brand-wrap">
+              <div className="brand-logo">
+                {db.organizationLogo ? <img src={db.organizationLogo} alt="logo" /> : <span>🏥</span>}
+              </div>
+              <div className="brand">
+                {(db.organizationLogoText || db.organizationName || "Dr Hibist").toString().slice(0, 24)}
+              </div>
             </div>
+
+            <label className="sidebar-field-label" htmlFor="sidebar-org-name">Organization Name</label>
+            <input
+              id="sidebar-org-name"
+              className="sidebar-org-name-input"
+              value={db.organizationLogoText || db.organizationName || ""}
+              onChange={e => setDb(p => ({ ...p, organizationLogoText: e.target.value, organizationName: e.target.value }))}
+              placeholder="Organization name"
+            />
+
+            <label className="sidebar-field-label" htmlFor="sidebar-logo-upload">Upload Logo</label>
+            <input
+              id="sidebar-logo-upload"
+              className="sidebar-upload-input"
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+            />
           </div>
 
           <div className="sidebar-mobile-top">
