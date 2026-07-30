@@ -2273,6 +2273,9 @@ export default function App() {
 
   // ========== MAIN DASHBOARD ==========
   const maxDept = Math.max(...deptStats.map(d => d.count), 1);
+  const dashboardDoctor = (db.employees || []).find(e => e.department === "Doctor");
+  const dashboardDoctorForm = dashboardDoctor ? getDoctorForm(dashboardDoctor.id) : null;
+  const dashboardDoctorCalc = dashboardDoctor ? calcDoctorWeekly(dashboardDoctor.id) : null;
   return (
     <div className={`app-shell ${dark ? "dark-mode" : ""}`}>
       <div className="finance-dashboard">
@@ -2355,6 +2358,83 @@ export default function App() {
           {/* ===== DASHBOARD ===== */}
           {section === "Dashboard" && (
             <>
+              <div className="dashboard-brand-card">
+                <div className="dashboard-brand-main">
+                  <div className="dashboard-brand-preview">
+                    <div className="dashboard-brand-logo">
+                      {db.organizationLogo ? <img src={db.organizationLogo} alt="organization logo" /> : <span>🏥</span>}
+                    </div>
+                    <div className="dashboard-brand-copy">
+                      <h3>Organization</h3>
+                      <p>{db.organizationLogoText || db.organizationName || "Dr Hibist"}</p>
+                    </div>
+                  </div>
+                  <label className="dashboard-brand-upload">
+                    <span>Upload logo</span>
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} />
+                  </label>
+                </div>
+              </div>
+
+              {dashboardDoctor && dashboardDoctorForm && (
+                <div className="card doctor-weekly-card">
+                  <div className="doctor-weekly-header">
+                    <h3>🩺 Doctors' weekly payment calculator</h3>
+                    <p>Compact weekly income entry for {dashboardDoctor.name}</p>
+                  </div>
+                  <div className="doctor-weekly-grid">
+                    <label>
+                      <span>Card</span>
+                      <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.cardAmount || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "cardAmount", ev.target.value)} />
+                    </label>
+                    <label>
+                      <span>Lab</span>
+                      <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.labAmount || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "labAmount", ev.target.value)} />
+                    </label>
+                    <label>
+                      <span>Imaging</span>
+                      <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.imagingAmount || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "imagingAmount", ev.target.value)} />
+                    </label>
+                    <label>
+                      <span>Consultation</span>
+                      <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.consultationAmount || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "consultationAmount", ev.target.value)} />
+                    </label>
+                    <label>
+                      <span>Procedure</span>
+                      <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.procedureAmount || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "procedureAmount", ev.target.value)} />
+                    </label>
+                    <label>
+                      <span>Round</span>
+                      <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.roundAmount || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "roundAmount", ev.target.value)} />
+                    </label>
+                  </div>
+                  <div className="doctor-weekly-actions">
+                    <select className="doctor-weekly-input doctor-weekly-select" value={dashboardDoctorForm.bankId || ""} onChange={ev => setDoctorField(dashboardDoctor.id, "bankId", ev.target.value)}>
+                      <option value="">Select bank</option>
+                      {(db.bankAccounts || []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                    <select className="doctor-weekly-input doctor-weekly-select" value={dashboardDoctorForm.basis || "all"} onChange={ev => setDoctorField(dashboardDoctor.id, "basis", ev.target.value)}>
+                      <option value="all">All</option>
+                      <option value="card">Card</option>
+                      <option value="lab">Lab</option>
+                      <option value="imaging">Imaging</option>
+                      <option value="consultation">Consultation</option>
+                      <option value="procedure">Procedure</option>
+                      <option value="round">Round</option>
+                    </select>
+                    <input className="doctor-weekly-input" type="number" value={dashboardDoctorForm.percentage || "15"} onChange={ev => setDoctorField(dashboardDoctor.id, "percentage", ev.target.value)} />
+                    <button className="btn" style={{ marginTop: 0, padding: "8px 12px" }} onClick={() => saveDoctorWeekly(dashboardDoctor)}>Save</button>
+                  </div>
+                  {dashboardDoctorCalc && (
+                    <div className="doctor-weekly-summary">
+                      <div><strong>{dashboardDoctorCalc.total.toLocaleString()} Birr</strong><span>Total</span></div>
+                      <div><strong>{dashboardDoctorCalc.doctorCut.toLocaleString()} Birr</strong><span>Doctor cut</span></div>
+                      <div><strong>{dashboardDoctorCalc.percent}%</strong><span>Share</span></div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="dashboard-widget-actions">
                 <button className="secondary-btn" onClick={() => setShowDashboardCards(p => !p)}>
                   {showDashboardCards ? "Hide Dashboard Boxes" : "Show Dashboard Boxes"}

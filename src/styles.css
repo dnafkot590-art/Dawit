@@ -223,20 +223,22 @@ body {
 
 .brand-wrap {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 2px;
+  text-align: center;
 }
 
 .brand-logo {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #ffffff;
-  padding: 4px;
+  padding: 2px;
   overflow: hidden;
 }
 
@@ -247,8 +249,8 @@ body {
 }
 
 .brand {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   line-height: 1.2;
   color: #f8fafc;
 }
@@ -1485,6 +1487,150 @@ td {
   cursor: pointer;
   font-weight: 700;
   font-size: 12px;
+}
+
+.dashboard-brand-card {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid #e2e8f0;
+}
+
+.dashboard-brand-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-brand-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-brand-logo {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #0f172a;
+  color: white;
+  overflow: hidden;
+}
+
+.dashboard-brand-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dashboard-brand-copy h3 {
+  margin: 0 0 2px;
+  font-size: 13px;
+}
+
+.dashboard-brand-copy p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dashboard-brand-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dashboard-brand-upload input {
+  display: none;
+}
+
+.doctor-weekly-card {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+}
+
+.doctor-weekly-header h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.doctor-weekly-header p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.doctor-weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.doctor-weekly-grid label,
+.doctor-weekly-actions label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.doctor-weekly-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  min-height: 32px;
+}
+
+.doctor-weekly-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+  align-items: end;
+}
+
+.doctor-weekly-select {
+  appearance: none;
+}
+
+.doctor-weekly-summary {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.doctor-weekly-summary>div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+
+.doctor-weekly-summary span {
+  color: #64748b;
+  font-size: 10px;
+  text-transform: uppercase;
 }
 
 .dashboard-widget-actions {
