@@ -2376,6 +2376,12 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="dashboard-widget-actions">
+                <button className="secondary-btn" onClick={() => setShowDashboardCards(p => !p)}>
+                  {showDashboardCards ? "Hide Dashboard Boxes" : "Show Dashboard Boxes"}
+                </button>
+              </div>
+
               {dashboardDoctor && dashboardDoctorForm && (
                 <div className="card doctor-weekly-card">
                   <div className="doctor-weekly-header">
@@ -2434,12 +2440,6 @@ export default function App() {
                   )}
                 </div>
               )}
-
-              <div className="dashboard-widget-actions">
-                <button className="secondary-btn" onClick={() => setShowDashboardCards(p => !p)}>
-                  {showDashboardCards ? "Hide Dashboard Boxes" : "Show Dashboard Boxes"}
-                </button>
-              </div>
 
               {!showDashboardCards && (
                 <div className="card empty-dashboard-card">
