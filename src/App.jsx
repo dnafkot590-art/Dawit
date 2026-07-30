@@ -2360,14 +2360,9 @@ export default function App() {
             <>
               <div className="dashboard-brand-card">
                 <div className="dashboard-brand-main">
-                  <div className="dashboard-brand-preview">
-                    <div className="dashboard-brand-logo">
-                      {db.organizationLogo ? <img src={db.organizationLogo} alt="organization logo" /> : <span>🏥</span>}
-                    </div>
-                    <div className="dashboard-brand-copy">
-                      <h3>Organization</h3>
-                      <p>{db.organizationLogoText || db.organizationName || "Dr Hibist"}</p>
-                    </div>
+                  <div className="dashboard-brand-copy">
+                    <h3>Organization</h3>
+                    <p>{db.organizationLogoText || db.organizationName || "Dr Hibist"}</p>
                   </div>
                   <label className="dashboard-brand-upload">
                     <span>Upload logo</span>
